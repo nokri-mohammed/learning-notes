@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learning notes</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f6f7fb; --card: #ffffff; --text: #1b2640; --muted: #56627f; --line: #d5dbe7; --accent: #2f5fd0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #11151f; --card: #1a2030; --text: #e8ecf6; --muted: #98a3bd; --line: #2b3550; --accent: #7aa2ff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 18px 56px; }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .lead { color: var(--muted); margin: 0 0 28px; }
+  h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 28px 0 10px; }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  li { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  li a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  li a:hover { text-decoration: underline; }
+  li span { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .tag { display: inline-block; font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; margin-left: 6px; color: var(--muted); font-weight: 400; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Learning notes</h1>
+  <p class="lead">Short notes and interactive pages. Open a page to see it animated, or a note to read it.</p>
+
+  <h2>Networking</h2>
+  <ul>
+    <li><a href="networking/file-journey.html">File journey</a><span class="tag">interactive</span>
+      <span>A file travelling through the OSI layers: browser, kernel, network card, two routers and the server. Scroll to zoom, press F to follow.</span></li>
+    <li><a href="networking/tcp.html">TCP animation</a><span class="tag">interactive</span>
+      <span>Handshake, numbered segments, rwnd and cwnd.</span></li>
+    <li><a href="networking/assets/networking.mindmap.html">Networking mind map</a><span class="tag">interactive</span>
+      <span>Speed, TCP, layers, routing and the internet in one map. Click a branch to fold it.</span></li>
+    <li><a href="networking/assets/file-journey.mp4">File journey video</a><span class="tag">mp4</span>
+      <span>The whole journey as a 3 minute video.</span></li>
+    <li><a href="https://github.com/nokri-mohammed/learning-notes/blob/main/notes/networking/core-concepts.md">Core concepts</a><span class="tag">note</span>
+      <span>Latency, bandwidth and the TCP building blocks on one page.</span></li>
+    <li><a href="https://github.com/nokri-mohammed/learning-notes/blob/main/notes/networking/osi-file-journey.md">OSI model: the journey of a file</a><span class="tag">note</span>
+      <span>Who does what (browser, kernel, network card, routers) as a file travels.</span></li>
+    <li><a href="https://github.com/nokri-mohammed/learning-notes/blob/main/notes/networking/reverse-proxy.md">Reverse proxy</a><span class="tag">note</span>
+      <span>One front door that routes requests to many backend services.</span></li>
+  </ul>
+</main>
+</body>
+</html>
