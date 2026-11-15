@@ -1,1 +1,13 @@
-{"permissions": {"allow": ["Bash(./scripts/publish.sh:*)"]}}
+{
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/publish.sh:*)",
+      "Bash(./scripts/packetplay.sh:*)",
+      "Bash(./scripts/mindmap.sh:*)",
+      "Bash(explorer.exe:*)",
+      "Bash(code .)",
+      "Edit(notes/**)",
+      "Edit(~/.claude/agent-memory/tutor/**)"
+    ]
+  }
+}
