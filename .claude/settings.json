@@ -4,6 +4,7 @@
       "Bash(./scripts/publish.sh:*)",
       "Bash(./scripts/packetplay.sh:*)",
       "Bash(./scripts/mindmap.sh:*)",
+      "Bash(./scripts/preview.sh:*)",
       "Bash(explorer.exe:*)",
       "Bash(code .)",
       "Edit(notes/**)",
