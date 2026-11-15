@@ -80,6 +80,7 @@ flowchart TD
 A 4000 byte `notes.txt` (HTTP and TLS overhead ignored): one HTTP message, then 3 TCP segments (1460 + 1460 + 1080 bytes), 3 IP packets, 3 frames, then bits as a signal. The receiver reverses each step and rebuilds the same 4000 bytes.
 
 ## Related
-- [Core concepts](core-concepts.md)
+- [TCP](tcp-basics.md)
+- [Routing](routing.md)
 - [TCP animation](tcp.html)
 - [Networking mind map](assets/networking.mindmap.html)

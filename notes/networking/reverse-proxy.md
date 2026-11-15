@@ -27,4 +27,4 @@ A server runs two apps on ports 3000 and 3001. The proxy receives `https://notes
 
 ## Related
 - [Networking](index.md)
-- [Core concepts](core-concepts.md)
+- [TCP](tcp-basics.md)
