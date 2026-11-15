@@ -18,4 +18,9 @@ done
 # which is wrong for a project site served under /<base>/. Point them at the real folder.
 sed -i "s#fetch(\"/static/contentIndex.json\")#fetch(\"/$base/static/contentIndex.json\")#g" "$pub"/*.js
 if grep -q 'fetch("/static/contentIndex.json")' "$pub"/*.js; then echo "contentIndex patch failed" >&2; exit 1; fi
+# Quartz v5.0.0 explorer links, search result cards (tags too) and the search preview fetch are built
+# from the domain root ("/" + slug). Prefix them with the site base. Do not touch the tab bar's
+# new URL(`/${slug}`): its slug comes from location.pathname, which already holds the base.
+sed -i -e "s#\.href=\"/\"+#.href=\"/$base/\"+#g" -e "s#new URL(\"/\"+#new URL(\"/$base/\"+#g" "$pub"/postscript.js
+if grep -q -e '\.href="/"+' -e 'new URL("/"+' "$pub"/postscript.js; then echo "root link patch failed" >&2; exit 1; fi
 touch "$pub/.nojekyll"
