@@ -31,7 +31,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Reuse Quartz's packages and its 42 restored plugins between runs; they only change
+      # when the pinned Quartz tag, its plugin lock file or our plugin config changes.
+      - name: Cache Quartz packages and plugins
+        id: quartz-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            quartz-src/node_modules
+            quartz-src/.quartz/plugins
+          key: quartz-${{ env.QUARTZ_REF }}-${{ hashFiles('quartz-src/quartz.lock.json', 'quartz-src/package-lock.json', 'site/quartz/quartz.config.yaml') }}
       - name: Install dependencies
+        if: steps.quartz-cache.outputs.cache-hit != 'true'
         working-directory: quartz-src
         run: npm ci
       - name: Copy overrides in
