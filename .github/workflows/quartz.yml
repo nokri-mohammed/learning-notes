@@ -1,0 +1,60 @@
+name: Quartz site (trial, not enabled until Pages source is switched)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  QUARTZ_REF: v5.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: site
+      - name: Clone Quartz at the pinned tag
+        run: git clone --depth 1 --branch "$QUARTZ_REF" https://github.com/jackyzha0/quartz quartz-src
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: quartz-src
+        run: npm ci
+      - name: Copy overrides in
+        run: cp -r site/quartz/. quartz-src/
+      - name: Restore Quartz plugins
+        working-directory: quartz-src
+        run: ./quartz/bootstrap-cli.mjs plugin restore
+      - name: Build
+        working-directory: quartz-src
+        run: ./quartz/bootstrap-cli.mjs build -d ../site/notes -o ../public
+      - name: Make hand-made HTML animations servable
+        run: bash site/quartz/postbuild.sh site/notes public learning-notes
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
