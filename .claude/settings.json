@@ -3,6 +3,7 @@
     "allow": [
       "Bash(./scripts/publish.sh:*)",
       "Bash(./scripts/packetplay.sh:*)",
+      "Bash(./scripts/flashdeck.sh:*)",
       "Bash(./scripts/mindmap.sh:*)",
       "Bash(./scripts/preview.sh:*)",
       "Bash(explorer.exe:*)",
