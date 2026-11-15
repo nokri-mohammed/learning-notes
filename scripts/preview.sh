@@ -23,9 +23,10 @@ case "$1" in
     [ -x "$q/quartz/bootstrap-cli.mjs" ] || { echo "quartz not installed at $q" >&2; exit 1; }
     cp quartz/quartz.config.yaml "$q/quartz.config.yaml"
     : > "$logf"
-    ( cd "$q" && setsid nohup ./quartz/bootstrap-cli.mjs build \
-        -d "$OLDPWD/notes" -o "$cache/public" --serve --port "$port" --wsPort 3001 \
-        >> "$logf" 2>&1 < /dev/null & echo $! > "$pidf" )
+    ( cd "$q" && setsid bash -c 'echo $$ > "$1"; shift; exec nohup "$@"' _ "$pidf" \
+        ./quartz/bootstrap-cli.mjs build -d "$OLDPWD/notes" -o "$cache/public" \
+        --serve --port "$port" --wsPort 3001 >> "$logf" 2>&1 < /dev/null & )
+    sleep 1
     echo "starting: $url (log: $logf)"
     ;;
   stop)
