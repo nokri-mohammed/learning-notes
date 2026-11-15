@@ -41,6 +41,10 @@ description: What networking is, and the few things worth remembering about spee
 
 <iframe src="assets/networking.mindmap.html" width="100%" height="640" style="border:0" loading="lazy" title="Networking mind map"></iframe>
 
+## Flashcards
+
+<iframe src="assets/networking.cards.html" width="100%" height="520" style="border:0" loading="lazy" title="Networking flashcards"></iframe>
+
 ## Also
 
 - [Reverse proxy](reverse-proxy.md): one front door for many services.

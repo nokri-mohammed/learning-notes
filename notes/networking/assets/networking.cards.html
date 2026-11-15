@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Networking</title>
+<style>
+
+:root {
+  color-scheme: light;
+  --bg: #e9e9eb;
+  --ink: #2a2b30;
+  --muted: #8a8c94;
+  --line: rgba(0, 0, 0, 0.1);
+  --front: #f7f7f8;
+  --back: #f7f7f8;
+  --dot: rgba(0, 0, 0, 0.055);
+  --accent: #5b6b4f;
+  --on-accent: #ffffff;
+  --chip: rgba(0, 0, 0, 0.05);
+  --shadow-a: rgba(40, 40, 60, 0.2);
+  --shadow-b: rgba(40, 40, 60, 0.1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #1c1d21;
+  --ink: #ececf0;
+  --muted: #8d8f99;
+  --line: rgba(255, 255, 255, 0.12);
+  --front: #2a2c32;
+  --back: #2a2c32;
+  --dot: rgba(255, 255, 255, 0.05);
+  --accent: #a9c294;
+  --on-accent: #1c1d21;
+  --chip: rgba(255, 255, 255, 0.07);
+  --shadow-a: rgba(0, 0, 0, 0.5);
+  --shadow-b: rgba(0, 0, 0, 0.3);
+} }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1c1d21;
+  --ink: #ececf0;
+  --muted: #8d8f99;
+  --line: rgba(255, 255, 255, 0.12);
+  --front: #2a2c32;
+  --back: #2a2c32;
+  --dot: rgba(255, 255, 255, 0.05);
+  --accent: #a9c294;
+  --on-accent: #1c1d21;
+  --chip: rgba(255, 255, 255, 0.07);
+  --shadow-a: rgba(0, 0, 0, 0.5);
+  --shadow-b: rgba(0, 0, 0, 0.3);
+}
+
+
+* { box-sizing: border-box; }
+html { overflow-x: clip; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1rem/1.5 "Avenir Next", "Segoe UI Variable Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.25rem;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+h1 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 560;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.tool:active { transform: scale(0.94); }
+.tool.round { padding: 0; width: 44px; }
+.tool svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tool .moon { display: none; }
+:root[data-theme="dark"] .tool .sun { display: none; }
+:root[data-theme="dark"] .tool .moon { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tool .sun { display: none; }
+  :root:not([data-theme="light"]) .tool .moon { display: block; }
+}
+
+.tags {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tags:empty { display: none; }
+.tags::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none;
+  min-height: 38px;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 560;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease, color 160ms ease;
+}
+.chip:active { transform: scale(0.95); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem 1rem 3rem;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.deck {
+  position: relative;
+  width: min(100%, 540px);
+  aspect-ratio: 3 / 2;
+}
+
+.card {
+  position: absolute;
+  inset: 0;
+  perspective: 1300px;
+  transform-origin: 50% 100%;
+  transition: transform 520ms cubic-bezier(0.32, 0.72, 0, 1), opacity 320ms ease;
+  will-change: transform;
+  cursor: pointer;
+}
+.card[data-depth="0"] { transform: translate3d(0, 0, 0) scale(1); z-index: 3; }
+.card[data-depth="1"] { transform: translate3d(0, 16px, 0) scale(0.955); z-index: 2; cursor: default; }
+.card[data-depth="2"] { transform: translate3d(0, 32px, 0) scale(0.91); z-index: 1; cursor: default; }
+.card[data-depth="3"] { transform: translate3d(0, 44px, 0) scale(0.88); opacity: 0; z-index: 0; }
+.card.dragging { transition: none; }
+.card.out-known {
+  transform: translate3d(125%, -6%, 0) rotate(16deg);
+  opacity: 0;
+  z-index: 4;
+  pointer-events: none;
+  transition: transform 460ms cubic-bezier(0.23, 1, 0.32, 1), opacity 360ms ease 60ms;
+}
+.card.out-again {
+  transform: translate3d(-18%, 26%, 0) rotate(-9deg) scale(0.86);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: transform 420ms cubic-bezier(0.23, 1, 0.32, 1), opacity 300ms ease 40ms;
+}
+.card:focus-visible { outline: none; }
+.card:focus-visible .face { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.shadow {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  box-shadow: 14px 20px 36px -8px var(--shadow-a), 3px 5px 10px -2px var(--shadow-b);
+  opacity: 0.8;
+  will-change: transform, opacity;
+}
+.tilt, .inner { position: absolute; inset: 0; transform-style: preserve-3d; }
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+  border-radius: 22px;
+  padding: 1.5rem 2rem;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--front);
+  }
+.face.back {
+  background-color: var(--back);
+  background-image: radial-gradient(circle, var(--dot) 2.2px, transparent 2.8px), radial-gradient(circle, var(--dot) 2.2px, transparent 2.8px);
+  background-size: 26px 26px;
+  background-position: 0 0, 13px 13px;
+  transform: rotateY(180deg);
+}
+.text {
+  position: relative;
+  margin: auto;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  text-align: center;
+  font-size: clamp(1.2rem, 1rem + 1.6vw, 1.65rem);
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  font-weight: 600;
+}
+.back .text { font-weight: 560; letter-spacing: -0.005em; }
+.card[data-long="1"] .text { font-size: clamp(1rem, 0.9rem + 0.9vw, 1.2rem); line-height: 1.4; }
+.side {
+  position: absolute;
+  left: 1.1rem;
+  top: 0.85rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.stamp {
+  position: absolute;
+  top: 1rem;
+  padding: 0.25rem 0.8rem;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  color: var(--accent);
+  background: var(--front);
+  font-weight: 700;
+  font-size: 0.95rem;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.stamp.k { right: 1.1rem; transform: rotate(8deg); }
+.stamp.a { left: 1.1rem; transform: rotate(-8deg); }
+
+.done {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+  animation: rise 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.done.show { display: flex; }
+.done p { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.012em; }
+.done .sub { font-size: 0.95rem; font-weight: 400; color: var(--muted); }
+@keyframes rise { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+footer {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+  padding: 0 1rem 1.25rem;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; width: 100%; }
+.act {
+  min-height: 56px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--chip);
+  cursor: pointer;
+  font-weight: 620;
+  letter-spacing: -0.005em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), opacity 150ms ease;
+}
+.act svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.act.go { background: var(--ink); color: var(--bg); }
+.act:active { transform: scale(0.96); }
+.act:disabled { opacity: 0.4; cursor: default; transform: none; }
+kbd {
+  font: 500 0.72rem/1 inherit;
+  padding: 0.22rem 0.42rem;
+  border-radius: 6px;
+  background: rgba(128, 128, 128, 0.22);
+}
+.act.go kbd { background: rgba(128, 128, 128, 0.35); }
+.count { font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hint { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.hint .touch { display: none; }
+@media (hover: none) {
+  .hint .mouse, .act kbd { display: none; }
+  .hint .touch { display: inline; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .tool:hover, .chip:hover, .act:hover:not(:disabled) { filter: brightness(0.96); }
+  .act.go:hover:not(:disabled) { filter: brightness(1.2); }
+  .tool:active, .chip:active, .act:active { transform: scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .card.out-known, .card.out-again { transition: opacity 180ms ease; }
+  .card[data-depth] { transform: none; }
+  .card[data-depth="1"], .card[data-depth="2"] { opacity: 0; }
+  .card.out-known, .card.out-again { transform: none; }
+  .inner, .tilt { transform: none !important; }
+  .face { backface-visibility: visible; -webkit-backface-visibility: visible; transition: opacity 180ms ease; }
+  .face.back { transform: none; opacity: 0; }
+  .card.flipped .face.back { opacity: 1; }
+  .card.flipped .face.front { opacity: 0; }
+  @media (max-width: 380px) {
+  .face { padding: 1.25rem 1.1rem; }
+}
+
+</style>
+</head>
+<body>
+<header>
+  <h1>Networking</h1>
+  <button class="tool round" id="theme" type="button" aria-label="Switch between light and dark theme">
+    <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+  </button>
+  <button class="tool" id="reset" type="button">Reset</button>
+</header>
+<nav class="tags" id="tags" aria-label="Filter by tag"></nav>
+<main class="stage" id="stage">
+  <div class="deck" id="deck">
+    <div class="done" id="done">
+      <p id="done-text">All cards known.</p>
+      <p class="sub">Nice. Study the whole deck again whenever you like.</p>
+      <button class="act go" id="again-round" type="button" style="padding:0 1.75rem">Study again</button>
+    </div>
+  </div>
+</main>
+<footer>
+  <div class="actions">
+    <button class="act" id="again" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Again <kbd>2</kbd></button>
+    <button class="act go" id="knew" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Knew it <kbd>1</kbd></button>
+  </div>
+  <div class="count" id="count" role="status" aria-live="polite"></div>
+  <p class="hint"><span class="mouse">Space or Enter flips the card. Keys 1 and 2 rate it.</span><span class="touch">Tap to flip. Swipe right if you knew it, left for again.</span></p>
+</footer>
+<script>
+window.__FLASHDECK__ = {"id":"networking:349bada4","cards":[{"q":"What is networking?","a":"How computers send data to each other: the rules (protocols) and the hardware (cables, cards, routers) that move bytes between machines.","tag":"basics"},{"q":"What are the two parts of network speed?","a":"Latency (the waiting) and bandwidth (the pipe width). Latency is usually the bottleneck.","tag":"speed"},{"q":"What four delays make up latency?","a":"Propagation (distance / signal speed)\nTransmission (packet size / link rate)\nProcessing (a router reads the header)\nQueuing (waiting in a buffer)\n","tag":"speed"},{"q":"What is RTT?","a":"Round-trip time: the time to go there and back.","tag":"speed"},{"q":"Why can no hardware beat the speed of light limit?","a":"Light in fiber travels at about 200,000 km/s, so distance sets a hard minimum delay.","tag":"speed"},{"q":"Which link sets your usable bandwidth?","a":"The slowest link between you and the server, usually at the edge (home, mobile), not the fiber core.","tag":"speed"},{"q":"How do you make a site faster when latency is the problem?","a":"Cut round trips, move data closer (CDN), cache and prefetch.","tag":"speed"},{"q":"How long does 10 MB take over a 1 Mbps link?","a":"80 seconds. 10 MB is 80 megabits, and 1 byte is 8 bits.","tag":"speed"},{"q":"What does the TCP three-way handshake do?","a":"SYN, SYN-ACK, ACK. It opens a connection and costs one round trip before any data.","tag":"tcp"},{"q":"Who takes part in the TCP handshake?","a":"Only the two endpoints. Routers just forward the packets.","tag":"tcp"},{"q":"What is the most a TCP sender keeps in flight?","a":"min(cwnd, rwnd) bytes.","tag":"tcp"},{"q":"What is rwnd?","a":"The receiver's free buffer space, sent back in every ACK.","tag":"tcp"},{"q":"What is cwnd?","a":"The sender's own guess of what the network can carry. It is never sent over the wire.","tag":"tcp"},{"q":"How does slow start work?","a":"cwnd begins around 10 packets and doubles each round trip. Congestion avoidance then grows it slowly. On loss it is cut.","tag":"tcp"},{"q":"What happens when the receiving app reads too slowly?","a":"The receive buffer fills, rwnd shrinks to 0 and the sender stops. In Node, write() returns false (backpressure).","tag":"tcp"},{"q":"What is head-of-line blocking?","a":"TCP delivers bytes in order, so one lost segment makes later data wait until it is resent.","tag":"tcp"},{"q":"What is the bandwidth-delay product?","a":"Bandwidth x RTT: the data that must be in flight to fill the pipe.","tag":"tcp"},{"q":"In what order is a file wrapped on the sender?","a":"App message\nTCP segments\nIP packets\nFrames\nBits as a signal\n","tag":"layers"},{"q":"Where does TCP splitting into segments happen?","a":"In the kernel.","tag":"layers"},{"q":"Where does IP add addresses?","a":"In the kernel.","tag":"layers"},{"q":"Where is a frame added?","a":"In the network card and its driver.","tag":"layers"},{"q":"What are the MTU and the typical MSS?","a":"MTU is 1500 bytes of frame payload. MSS is about 1460 bytes of TCP data.","tag":"layers"},{"q":"How does the receiver find the right TCP connection?","a":"By the 4-tuple: source IP, source port, destination IP, destination port.","tag":"layers"},{"q":"Why does HTTP need to parse the TCP stream?","a":"TCP has no message boundaries, so HTTP finds them: headers first, then the body length.","tag":"layers"},{"q":"How far up the stack does a router read?","a":"Only up to layer 3, the destination IP address.","tag":"routing"},{"q":"How does a router pick the next hop?","a":"From its routing table. The longest matching prefix wins.","tag":"routing"},{"q":"What does the TTL do?","a":"Each router subtracts 1. At 0 the packet is dropped, so it cannot loop forever.","tag":"routing"},{"q":"What changes at every hop, and what stays the same?","a":"MAC addresses change at every hop. IP addresses stay the same end to end.","tag":"routing"},{"q":"What does ARP do?","a":"Finds the MAC address of the next hop for a given IP address.","tag":"routing"},{"q":"What does a network card do with a frame whose destination MAC is not its own?","a":"It drops it.","tag":"routing"},{"q":"Who owns the internet?","a":"No one. It is many independent networks (ISPs, carriers, cloud companies) that agree to pass traffic between each other.","tag":"internet"},{"q":"What is an autonomous system (AS)?","a":"One independent network with its own AS number.","tag":"internet"},{"q":"What is BGP?","a":"The protocol where networks announce which addresses they can reach.","tag":"internet"},{"q":"What is the difference between peering and transit?","a":"Peering: two networks swap traffic directly, usually free. Transit: a smaller network pays a larger one to carry its traffic.","tag":"internet"},{"q":"Who sets standards and hands out addresses?","a":"The IETF writes standards. IANA and the regional registries (RIRs) hand out IP blocks and AS numbers.","tag":"internet"},{"q":"What does a reverse proxy do?","a":"One front door that routes requests to many backends by hostname or path, and can terminate TLS, cache and rate-limit.","tag":"proxy"}]};
+(function () {
+  "use strict";
+  var DECK = window.__FLASHDECK__;
+  var cards = DECK.cards;
+  var KEY = "flashdeck:v1:" + DECK.id;
+  var THEME_KEY = "flashdeck:theme";
+  var $ = function (s) { return document.querySelector(s); };
+  var RM = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // ---- storage: every access is guarded (blocked in some iframes and private windows)
+  function store(op, key, val) {
+    try {
+      var ls = window.localStorage;
+      if (op === "get") return ls.getItem(key);
+      if (op === "set") ls.setItem(key, val);
+      else ls.removeItem(key);
+    } catch (e) { /* storage unavailable: the page still works, progress is not kept */ }
+    return null;
+  }
+  function loadKnown() {
+    var out = new Set();
+    try {
+      var raw = store("get", KEY);
+      var arr = raw ? JSON.parse(raw).known : [];
+      if (Array.isArray(arr)) arr.forEach(function (i) { if (Number.isInteger(i) && i >= 0 && i < cards.length) out.add(i); });
+    } catch (e) { /* ignore a damaged value */ }
+    return out;
+  }
+  function saveKnown() { store("set", KEY, JSON.stringify({ known: Array.from(known) })); }
+
+  // ---- theme
+  var root = document.documentElement;
+  var savedTheme = store("get", THEME_KEY);
+  if (savedTheme === "light" || savedTheme === "dark") root.setAttribute("data-theme", savedTheme);
+  function isDark() {
+    var t = root.getAttribute("data-theme");
+    return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  $("#theme").addEventListener("click", function () {
+    var next = isDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    store("set", THEME_KEY, next);
+  });
+
+  // ---- state
+  var known = loadKnown();
+  var tag = null;
+  var queue = [];
+  var stack = [];
+  var deckEl = $("#deck");
+  var doneEl = $("#done");
+  var countEl = $("#count");
+  var btnKnew = $("#knew");
+  var btnAgain = $("#again");
+
+  function inFilter(i) { return tag === null || cards[i].tag === tag; }
+  function buildQueue() {
+    queue = [];
+    for (var i = 0; i < cards.length; i++) if (inFilter(i) && !known.has(i)) queue.push(i);
+  }
+  function updateCount() {
+    var total = 0, k = 0;
+    for (var i = 0; i < cards.length; i++) if (inFilter(i)) { total++; if (known.has(i)) k++; }
+    countEl.textContent = queue.length + " / " + total + " left, " + k + " known";
+    var none = queue.length === 0;
+    btnKnew.disabled = none;
+    btnAgain.disabled = none;
+    doneEl.classList.toggle("show", none);
+    if (none) $("#done-text").textContent = total === 1 ? "That card is known." : "All " + total + " cards known.";
+  }
+
+  // ---- card elements
+  function el(tagName, cls, text) {
+    var n = document.createElement(tagName);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function makeFace(cls, label, text) {
+    var f = el("div", "face " + cls);
+    f.appendChild(el("span", "side", label));
+    f.appendChild(el("div", "text", text));
+    return { face: f };
+  }
+  function makeCard(idx) {
+    var data = cards[idx];
+    var card = el("div", "card");
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", "Flip card");
+    card.setAttribute("data-depth", "3");
+    if (data.q.length > 120 || data.a.length > 120) card.setAttribute("data-long", "1");
+    var shadow = el("div", "shadow");
+    var tilt = el("div", "tilt");
+    var inner = el("div", "inner");
+    var front = makeFace("front", "Question", data.q);
+    var back = makeFace("back", "Answer", data.a);
+    back.face.setAttribute("aria-hidden", "true");
+    inner.appendChild(front.face);
+    inner.appendChild(back.face);
+    tilt.appendChild(inner);
+    card.appendChild(shadow);
+    card.appendChild(tilt);
+    var sk = el("div", "stamp k", "Knew it");
+    var sa = el("div", "stamp a", "Again");
+    card.appendChild(sk);
+    card.appendChild(sa);
+    return {
+      idx: idx, el: card, shadow: shadow, tilt: tilt, inner: inner,
+      front: front.face, back: back.face, sk: sk, sa: sa,
+      p: 0, v: 0, target: 0, rx: 0, ry: 0, trx: 0, try_: 0, lift: 0
+    };
+  }
+  function setDepths(delay) {
+    stack.forEach(function (c, i) {
+      c.el.style.transitionDelay = delay ? i * 55 + "ms" : "";
+      c.el.setAttribute("data-depth", String(i));
+      c.el.setAttribute("tabindex", i === 0 ? "0" : "-1");
+      c.el.setAttribute("aria-hidden", i === 0 ? "false" : "true");
+    });
+    if (delay) setTimeout(function () { stack.forEach(function (c) { c.el.style.transitionDelay = ""; }); }, 700);
+  }
+  function fill(delay) {
+    for (var i = 0; i < 3 && i < queue.length; i++) {
+      if (!stack[i]) {
+        var c = makeCard(queue[i]);
+        stack[i] = c;
+        deckEl.appendChild(c.el);
+      }
+    }
+    void deckEl.offsetWidth; // commit the starting depth so the cards animate into place
+    setDepths(delay);
+  }
+  function render() {
+    stack.forEach(function (c) { c.el.remove(); });
+    stack = [];
+    buildQueue();
+    updateCount();
+    fill(true);
+    draw(stack[0]);
+  }
+
+  // ---- the top card: flip spring, tilt and lift (transform and opacity only)
+  var K = 130, C = 15.5; // spring: response about 0.55 s, slight overshoot
+  var last = 0, running = false;
+  function draw(c) {
+    if (!c) return;
+    var p = c.p;
+    var lift = Math.sin(Math.PI * Math.min(Math.max(p, 0), 1));
+    c.inner.style.transform = "rotateY(" + (p * 180).toFixed(2) + "deg)";
+    c.tilt.style.transform = "translate3d(0," + (-lift * 10).toFixed(2) + "px," + (lift * 70).toFixed(2) + "px) rotateX(" + c.rx.toFixed(2) + "deg) rotateY(" + c.ry.toFixed(2) + "deg)";
+    c.shadow.style.transform = "translate3d(0," + (lift * 18).toFixed(2) + "px,0) scale(" + (1 + lift * 0.05).toFixed(3) + ")";
+    c.shadow.style.opacity = String(0.8 + 0.2 * lift);
+    var flipped = p > 0.5;
+    if (c.flipped !== flipped) {
+      c.flipped = flipped;
+      c.el.classList.toggle("flipped", flipped);
+      c.front.setAttribute("aria-hidden", flipped ? "true" : "false");
+      c.back.setAttribute("aria-hidden", flipped ? "false" : "true");
+    }
+  }
+  function step(t) {
+    var dt = Math.min((t - last) / 1000, 1 / 30);
+    last = t;
+    var c = stack[0];
+    var busy = false;
+    if (c) {
+      var a = (c.target - c.p) * K - c.v * C;
+      c.v += a * dt;
+      c.p += c.v * dt;
+      if (Math.abs(c.target - c.p) < 0.0008 && Math.abs(c.v) < 0.01) { c.p = c.target; c.v = 0; }
+      else busy = true;
+      var f = 1 - Math.exp(-dt * 13);
+      c.rx += (c.trx - c.rx) * f;
+      c.ry += (c.try_ - c.ry) * f;
+      if (Math.abs(c.trx - c.rx) > 0.02 || Math.abs(c.try_ - c.ry) > 0.02) busy = true;
+      draw(c);
+    }
+    if (busy) requestAnimationFrame(step);
+    else running = false;
+  }
+  function kick() {
+    if (running) return;
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(step);
+  }
+
+  function flip() {
+    var c = stack[0];
+    if (!c) return;
+    c.target = c.target === 1 ? 0 : 1;
+    if (RM.matches) { c.p = c.target; c.v = 0; draw(c); return; }
+    kick();
+  }
+
+  // ---- rating
+  function leave(c, kind) {
+    c.el.style.transform = "";
+    c.el.classList.remove("dragging");
+    c.el.style.transitionDelay = "";
+    c.el.classList.add("out-" + kind);
+    c.el.setAttribute("tabindex", "-1");
+    c.sk.style.opacity = c.sa.style.opacity = "0";
+    setTimeout(function () { c.el.remove(); }, 650);
+  }
+  function rate(isKnown) {
+    var c = stack[0];
+    if (!c) return;
+    queue.shift();
+    if (isKnown) { known.add(c.idx); saveKnown(); }
+    else queue.splice(Math.min(queue.length, 4), 0, c.idx);
+    stack.shift();
+    for (var i = 0; i < stack.length; i++) {
+      if (stack[i].idx !== queue[i]) {
+        for (var j = i; j < stack.length; j++) stack[j].el.remove();
+        stack.length = i;
+        break;
+      }
+    }
+    leave(c, isKnown ? "known" : "again");
+    updateCount();
+    fill(false);
+    kick();
+  }
+  btnKnew.addEventListener("click", function () { rate(true); });
+  btnAgain.addEventListener("click", function () { rate(false); });
+
+  // ---- reset (two clicks, so a stray tap does not wipe progress)
+  var resetBtn = $("#reset");
+  var resetTimer = 0;
+  function resetAll() {
+    known = new Set();
+    store("del", KEY);
+    render();
+  }
+  resetBtn.addEventListener("click", function () {
+    if (resetTimer) {
+      clearTimeout(resetTimer);
+      resetTimer = 0;
+      resetBtn.textContent = "Reset";
+      resetAll();
+    } else {
+      resetBtn.textContent = "Sure?";
+      resetTimer = setTimeout(function () { resetTimer = 0; resetBtn.textContent = "Reset"; }, 2500);
+    }
+  });
+  $("#again-round").addEventListener("click", resetAll);
+
+  // ---- tag filter
+  var tagsEl = $("#tags");
+  var tagList = [];
+  cards.forEach(function (c) { if (c.tag && tagList.indexOf(c.tag) < 0) tagList.push(c.tag); });
+  if (tagList.length > 0) {
+    ["All"].concat(tagList).forEach(function (name, i) {
+      var b = el("button", "chip", name);
+      b.type = "button";
+      b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+      b.addEventListener("click", function () {
+        tag = i === 0 ? null : name;
+        Array.prototype.forEach.call(tagsEl.children, function (n) { n.setAttribute("aria-pressed", n === b ? "true" : "false"); });
+        render();
+      });
+      tagsEl.appendChild(b);
+    });
+  }
+
+  // ---- keyboard
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    var onControl = t && (t.tagName === "BUTTON" || t.tagName === "SELECT");
+    if (e.key === " " || e.key === "Enter") {
+      if (onControl) return; // let a focused button press itself
+      e.preventDefault();
+      if (!e.repeat) flip();
+    } else if (e.key === "1" || e.key === "ArrowRight") {
+      if (!e.repeat) rate(true);
+    } else if (e.key === "2" || e.key === "ArrowLeft") {
+      if (!e.repeat) rate(false);
+    }
+  });
+
+  // ---- pointer: tilt on hover, click to flip, drag to throw
+  var stage = $("#stage");
+  var drag = null;
+  function point(c, e) {
+    var r = c.el.getBoundingClientRect();
+    return { x: Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width) * 2 - 1)), y: Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height) * 2 - 1)) };
+  }
+  stage.addEventListener("pointermove", function (e) {
+    var c = stack[0];
+    if (!c || drag || RM.matches || e.pointerType === "touch") return;
+    var p = point(c, e);
+    c.try_ = p.x * 7;
+    c.trx = -p.y * 7;
+    kick();
+  });
+  stage.addEventListener("pointerleave", function () {
+    var c = stack[0];
+    if (!c || drag) return;
+    c.trx = c.try_ = 0;
+    kick();
+  });
+  stage.addEventListener("pointerdown", function (e) {
+    var c = stack[0];
+    if (!c || !c.el.contains(e.target) || (e.pointerType === "mouse" && e.button !== 0)) return;
+    drag = { id: e.pointerId, c: c, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, moved: false, t: [{ x: e.clientX, t: e.timeStamp }] };
+    try { stage.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ }
+  });
+  stage.addEventListener("pointermove", function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag, c = d.c;
+    d.dx = e.clientX - d.x0;
+    d.dy = e.clientY - d.y0;
+    if (!d.moved && Math.hypot(d.dx, d.dy) > 10) { d.moved = true; c.el.classList.add("dragging"); }
+    if (!d.moved) return;
+    d.t.push({ x: e.clientX, t: e.timeStamp });
+    if (d.t.length > 6) d.t.shift();
+    var rot = RM.matches ? 0 : d.dx * 0.05;
+    c.el.style.transform = "translate3d(" + d.dx + "px," + d.dy * 0.25 + "px,0) rotate(" + rot + "deg)";
+    var amt = Math.min(Math.abs(d.dx) / 110, 1);
+    c.sk.style.opacity = d.dx > 0 ? amt : 0;
+    c.sa.style.opacity = d.dx < 0 ? amt : 0;
+    if (!RM.matches) { c.try_ = Math.max(-12, Math.min(12, d.dx * 0.06)); c.trx = 0; kick(); }
+  });
+  function endDrag(e, cancelled) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag, c = d.c;
+    drag = null;
+    try { stage.releasePointerCapture(e.pointerId); } catch (err) { /* already released */ }
+    c.try_ = 0;
+    if (!d.moved) {
+      if (!cancelled && c === stack[0]) flip();
+      return;
+    }
+    var first = d.t[0], lastS = d.t[d.t.length - 1];
+    var v = lastS.t > first.t ? (lastS.x - first.x) / (lastS.t - first.t) : 0; // px per ms
+    var dir = Math.abs(d.dx) > 90 || Math.abs(v) > 0.55 ? (d.dx + v * 120 > 0 ? 1 : -1) : 0;
+    if (cancelled) dir = 0;
+    if (dir !== 0 && c === stack[0]) {
+      rate(dir > 0);
+    } else {
+      c.el.classList.remove("dragging");
+      c.el.style.transform = ""; // the card springs back through its normal transition
+      c.sk.style.opacity = c.sa.style.opacity = "0";
+      kick();
+    }
+  }
+  stage.addEventListener("pointerup", function (e) { endDrag(e, false); });
+  stage.addEventListener("pointercancel", function (e) { endDrag(e, true); });
+
+  RM.addEventListener && RM.addEventListener("change", function () {
+    stack.forEach(function (c) { c.p = c.target; c.v = 0; c.rx = c.ry = c.trx = c.try_ = 0; draw(c); });
+  });
+
+  render();
+})();
+
+</script>
+</body>
+</html>
