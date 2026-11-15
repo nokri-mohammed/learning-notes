@@ -1,0 +1,78 @@
+# OSI model: the journey of a file
+
+**Core:** A file is wrapped layer by layer on the sender (browser, kernel, network card), forwarded by routers that read only up to layer 3, then unwrapped in reverse on the receiver.
+
+## Key points
+
+**Sender: who does what**
+
+| Layer | Who | What happens | Data form |
+|---|---|---|---|
+| 7 Application | Browser or Node | Builds the HTTP POST with the file in the body | HTTP message |
+| 6 Presentation | Browser (TLS library) | Encrypts the message | Encrypted message |
+| 5 Session | App and TCP | Connection state. In practice folded into the app and TCP | Byte stream |
+| 4 Transport | Kernel (TCP) | Handshake first. Splits the stream into segments (about 1460 bytes), adds ports and sequence numbers, waits for ACKs | TCP segments |
+| 3 Network | Kernel (IP) | Adds source and destination IP address | IP packets |
+| 2 Data link | Driver and network card | Adds MAC addresses, type and CRC. Payload at most 1500 bytes (MTU) | Frames |
+| 1 Physical | Network card (PHY) | Bits become voltage (copper), light (fiber) or radio (WiFi) | Signal |
+
+**Browser to kernel**
+- The app calls `send()`. The bytes are copied into the kernel's send buffer, one per connection, in RAM.
+- If the buffer is full, `send()` blocks (in Node, `write()` returns `false`: backpressure).
+- Before data, the kernel did the TCP handshake (SYN, SYN-ACK, ACK), one round trip.
+- TCP sends at most `min(cwnd, rwnd)` unacknowledged bytes. cwnd is the sender's own guess (slow start doubles it each round trip). rwnd is the receiver's free buffer, carried in every ACK.
+
+**Network card**
+- Sending: the driver hands over the IP packet. Header fields (MACs, type) and the CRC are added, and the PHY turns bits into a signal.
+- Receiving: the PHY gives bits. Hardware spots the start marker (7 bytes of `10101010`, then `10101011`) and reads fields at fixed positions. It checks the destination MAC and the CRC, drops damaged frames, then copies the payload into RAM (DMA) and interrupts the CPU. It is mostly fixed hardware, not a general CPU.
+- A frame has MAC addresses, type, payload and CRC. It carries no file identity.
+
+**Routers in between**
+- Each hop strips the old frame, reads the destination IP, picks the next hop from its routing table, and wraps the same packet in a new frame with new MAC addresses.
+- MAC addresses change at every hop. IP addresses stay the same end to end.
+- Routers work only up to layer 3 and never join the TCP handshake. Each hop adds processing, queuing and transmission delay.
+
+**Receiver: the reverse**
+- Network card: signal, bits, frames (CRC and MAC checked), then the packet goes to RAM.
+- Kernel IP: checks the destination IP and strips the header.
+- Kernel TCP: finds the connection by its 4-tuple (source IP, source port, destination IP, destination port), puts segments in order by sequence number, sends ACKs with its rwnd, and fills the per-connection receive buffer in RAM.
+- App: reads the buffer (Node `'data'`, `recv()`), which frees space and grows rwnd. A slow reader leaves the buffer full, so rwnd shrinks to 0 and the sender stops.
+- TCP has no message boundaries, so HTTP parses the stream: headers first, then the body length it announced.
+
+## Picture
+
+Animation of the whole journey (from the typed address to the ACK):
+
+<video src="assets/file-journey.mp4" controls width="100%"></video>
+
+[Watch the animation (MP4)](assets/file-journey.mp4). If the video does not play here (GitHub often does not play videos stored in the repo), use that link, or open the [live interactive version](https://nokri-mohammed.github.io/learning-notes/notes/networking/file-journey.html) in a browser.
+
+```mermaid
+flowchart TD
+  subgraph Sender
+    A["7 App: HTTP message"] --> B["6 TLS: encrypted"]
+    B --> C["4 Kernel TCP: segments"]
+    C --> D["3 Kernel IP: packets"]
+    D --> E["2 Driver and card: frames"]
+    E --> F["1 Card PHY: signal"]
+  end
+  F --> R1["Router: layers 1 to 3"]
+  R1 --> R2["Router: layers 1 to 3"]
+  subgraph Receiver
+    G["1 Card: bits"] --> H["2 Frames, CRC checked"]
+    H --> I["3 Kernel IP: packets"]
+    I --> J["4 Kernel TCP: in order, ACKs"]
+    J --> K["7 App: HTTP parsed"]
+  end
+  R2 --> G
+```
+
+## Example
+A 4000 byte `notes.txt` (HTTP and TLS overhead ignored): one HTTP message, then 3 TCP segments (1460 + 1460 + 1080 bytes), 3 IP packets, 3 frames, then bits as a signal. The receiver reverses each step and rebuilds the same 4000 bytes.
+
+## Related
+- [File journey (isometric map)](file-journey.html)
+- [TCP animation](tcp.html)
+- [Core concepts](core-concepts.md)
+
+_Updated: 2026-11-15_

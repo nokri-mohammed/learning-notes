@@ -1,0 +1,138 @@
+version: 1
+title: How TCP works
+
+nodes:
+  client: { label: Client laptop, icon: laptop, sub: 192.0.2.20 }
+  r1:     { label: Router (hop 1), icon: router }
+  r2:     { label: Router (hop 2), icon: router }
+  server: { label: Server,        icon: server, sub: 198.51.100.80 }
+
+links:
+  - [client, r1]
+  - [r1, r2]
+  - [r2, server]
+
+tracks:
+  hs:   { label: Handshake,    color: orange }
+  data: { label: Data segment, color: blue }
+  ack:  { label: ACK,          color: green }
+  win:  { label: Window,       color: purple }
+
+chapters:
+  - title: 1. Open the connection (three-way handshake)
+    desc: Before any data flows, both ends agree on starting numbers. Only the two ends take part. Routers just forward packets.
+    steps:
+      - from: client
+        to: server
+        track: hs
+        label: SYN
+        desc: The client asks to open a connection and proposes a starting sequence number.
+        data:
+          flags: SYN
+          src: "192.0.2.20:50000"
+          dst: "198.51.100.80:80"
+          seq: 1000
+        at:
+          r1:
+            desc: The router reads the IP header and forwards. It never joins the handshake.
+          r2:
+            desc: Same again. Routers only look up to layer 3.
+      - from: server
+        to: client
+        track: hs
+        label: SYN-ACK
+        desc: The server agrees, sends its own starting number, and says how much free buffer it has (the receive window).
+        data:
+          flags: SYN-ACK
+          seq: 5000
+          ack: 1001
+          win: "65536 bytes"
+      - from: client
+        to: server
+        track: hs
+        label: ACK
+        desc: The connection is open. This costs one round trip, which is why latency matters more than bandwidth for small requests.
+        data:
+          flags: ACK
+          seq: 1001
+          ack: 5001
+
+  - title: 2. Send numbered segments
+    desc: TCP splits the 4000 byte file into segments and numbers every byte, so the receiver can put them back in order.
+    steps:
+      - parallel:
+          - { from: client, to: server, track: data, label: "seg 1", data: { seq: 1001, len: 1460, flags: ACK } }
+          - { from: client, to: server, track: data, label: "seg 2", data: { seq: 2461, len: 1460, flags: ACK } }
+          - { from: client, to: server, track: data, label: "seg 3", data: { seq: 3921, len: 1080, flags: ACK } }
+      - from: server
+        to: client
+        track: ack
+        label: "ACK 5001"
+        desc: The server confirms everything up to byte 5000 arrived and says how much buffer is still free. The sender never has more than min(cwnd, rwnd) unacknowledged.
+        data:
+          flags: ACK
+          ack: 5001
+          win: "61536 bytes"
+
+  - title: 3. rwnd, the receiver says stop
+    desc: The receive window is the free space in the server's buffer. It is sent back in every ACK.
+    steps:
+      - from: server
+        to: client
+        track: win
+        label: "ACK, window 0"
+        desc: The server application reads slowly, so the buffer is full. The window is 0 and the sender must stop, even though the network is empty.
+        data:
+          flags: ACK
+          ack: 5001
+          win: 0
+      - from: server
+        to: client
+        track: win
+        label: Window update
+        desc: The application read some data, which freed space. The server announces a bigger window.
+        data:
+          flags: ACK
+          ack: 5001
+          win: "30720 bytes"
+      - from: client
+        to: server
+        track: data
+        label: "seg 4"
+        desc: The sender continues.
+        data:
+          seq: 5001
+          len: 1460
+          flags: ACK
+
+  - title: 4. cwnd, the sender's own limit (slow start)
+    desc: cwnd is the sender's guess of what the network can carry. It lives only on the sender and is never sent in a packet.
+    steps:
+      - from: client
+        to: server
+        track: data
+        label: slow start
+        mode: flow
+        both: true
+        desc: cwnd starts at about 10 packets and doubles each round trip (10, 20, 40) as ACKs come back. The sender sends at most min(cwnd, rwnd).
+        data:
+          cwnd: "10 then 20 then 40"
+          limit: "min(cwnd, rwnd)"
+      - from: server
+        to: client
+        track: ack
+        label: duplicate ACK
+        desc: A segment went missing. The receiver keeps asking for the same byte number.
+        data:
+          flags: ACK
+          ack: 2461
+          note: "still waiting"
+      - from: client
+        to: server
+        track: data
+        label: retransmit
+        desc: The sender resends the lost segment itself. The application never sees this. It also cuts cwnd, then grows it slowly again, so a loss does not flood the network.
+        data:
+          seq: 2461
+          len: 1460
+          cwnd: cut
