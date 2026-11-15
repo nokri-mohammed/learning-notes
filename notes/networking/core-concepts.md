@@ -1,4 +1,9 @@
-# Networking: core concepts
+---
+title: "Networking: core concepts"
+tags: [networking, tcp, latency]
+date: 2026-11-15
+description: Latency, bandwidth and the TCP building blocks on one page.
+---
 
 **Core:** Speed is a feature. Network speed is set by latency (waiting) and bandwidth (pipe width), and latency is usually the bottleneck. TCP then adds reliability on top, at the cost of round trips.
 
@@ -77,7 +82,6 @@ flowchart TD
 New York to London is about 56 ms round trip. Handshake, TLS and the request take about 3 round trips, roughly 170 ms before the first byte, on any bandwidth. A server in London removes the crossing.
 
 ## Related
-- [File journey (isometric map)](file-journey.html)
+- [OSI model: the journey of a file](osi-file-journey.md)
 - [TCP animation](tcp.html)
-
-_Updated: 2026-11-15_
+- [Networking mind map](assets/networking.mindmap.html)

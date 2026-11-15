@@ -1,4 +1,9 @@
-# OSI model: the journey of a file
+---
+title: "OSI model: the journey of a file"
+tags: [networking, osi]
+date: 2026-11-15
+description: Who does what (browser, kernel, network card, routers) as a file travels.
+---
 
 **Core:** A file is wrapped layer by layer on the sender (browser, kernel, network card), forwarded by routers that read only up to layer 3, then unwrapped in reverse on the receiver.
 
@@ -41,11 +46,15 @@
 
 ## Picture
 
-Animation of the whole journey (from the typed address to the ACK):
+Interactive map of the whole journey. Scroll to zoom, drag to pan.
+
+<iframe src="file-journey.html" width="100%" height="560" style="border:0" loading="lazy" title="File journey animation"></iframe>
+
+The same journey as a video (from the typed address to the ACK):
 
 <video src="assets/file-journey.mp4" controls width="100%"></video>
 
-[Watch the animation (MP4)](assets/file-journey.mp4). If the video does not play here (GitHub often does not play videos stored in the repo), use that link, or open the [live interactive version](https://nokri-mohammed.github.io/learning-notes/notes/networking/file-journey.html) in a browser.
+[Open the video file](assets/file-journey.mp4) or the [full-page interactive map](file-journey.html).
 
 ```mermaid
 flowchart TD
@@ -71,8 +80,6 @@ flowchart TD
 A 4000 byte `notes.txt` (HTTP and TLS overhead ignored): one HTTP message, then 3 TCP segments (1460 + 1460 + 1080 bytes), 3 IP packets, 3 frames, then bits as a signal. The receiver reverses each step and rebuilds the same 4000 bytes.
 
 ## Related
-- [File journey (isometric map)](file-journey.html)
-- [TCP animation](tcp.html)
 - [Core concepts](core-concepts.md)
-
-_Updated: 2026-11-15_
+- [TCP animation](tcp.html)
+- [Networking mind map](assets/networking.mindmap.html)
