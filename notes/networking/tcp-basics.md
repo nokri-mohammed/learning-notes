@@ -24,11 +24,44 @@ description: "How TCP makes the network reliable: handshake, flow control and co
 - TCP retransmits lost segments itself, so the app never sees it.
 - A slow reader leaves the receive buffer full, so rwnd shrinks to 0 and the sender stops. In Node this shows up as backpressure (`write()` returns `false`).
 
-## To study next
+## Window size and the round trip
 
-- Bandwidth-delay product: bandwidth x RTT, the data that must be in flight to fill the pipe. A smaller window leaves the link underused.
-- Head-of-line blocking: TCP delivers bytes in order, so one lost segment makes later data wait.
-- Optimizing for TCP: fewer round trips (reuse connections), data closer to the user, a current server TCP stack.
+- Speed is capped at window / RTT, so a long RTT needs a bigger window to keep the same speed.
+- The window needed is the bandwidth-delay product (BDP): bandwidth x RTT, the data on the wire during one round trip.
+- Nobody calculates the window. cwnd explores: it grows while ACKs return and is cut on loss.
+- Window scaling lets the receive window grow past 64 KB. The receiver's auto-tuning grows its kernel buffer.
+- The kernel adjusts windows by itself. You tune it only when its limits are too low.
+
+## Head-of-line blocking
+
+- TCP delivers bytes in order. If one segment is lost, later segments wait in the receiver's buffer until the lost one is resent.
+  - The app sees only a delay, not the resend.
+- The cost: an extra round trip, and uneven arrival times (jitter).
+- The benefit: the app never has to reorder data.
+- Jitter-sensitive apps (voice calls) break when arrival times vary.
+
+## TCP vs UDP
+
+- TCP: complete, ordered data, such as files and JSON. A lost packet is resent.
+- UDP: no guarantee, but no waiting. Use it when old data is worthless.
+  - Live audio and video, games, WebRTC, DNS.
+- Packet loss is TCP's feedback: it tells the sender to slow down.
+- QUIC (HTTP/3) runs on UDP and adds its own reliability.
+
+## Optimizing for TCP
+
+- The core: the handshake costs a round trip, slow start applies to every new connection, and cwnd sets the throughput. So latency, not bandwidth, is usually the bottleneck.
+- Send fewer bits: drop unneeded resources and compress.
+- Move the bits closer: servers near the user, or a CDN.
+- Reuse connections (keep-alive, HTTP/2, connection pools): it avoids repeated handshakes and slow starts.
+- Keep servers on a recent kernel. It is the best single tuning.
+- Server settings: initial cwnd 10, window scaling on, slow-start restart off.
+- TCP Fast Open: first data goes in the SYN. It needs both sides and is rarely used.
+
+## Inspect connections
+
+- `ss` is the Linux tool to inspect open connections and their settings.
+- `ss -ti` shows TCP details per connection, such as the window scale (`wscale`) that was negotiated.
 
 ## Picture
 
