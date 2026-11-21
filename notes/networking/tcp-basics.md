@@ -48,6 +48,16 @@ description: "How TCP makes the network reliable: handshake, flow control and co
 - Packet loss is TCP's feedback: it tells the sender to slow down.
 - QUIC (HTTP/3) runs on UDP and adds its own reliability.
 
+## TCP and UDP in my own words
+
+**TCP**
+
+When two machines communicate, the sender splits the data into segments. The size of each segment is capped at a maximum (about 1460 bytes), not decided by how much data there is. Every segment gets a sequence number. When they arrive, they can come in a different order, so the TCP layer in the kernel puts them back in order and puts the data together. The receiver sends ACKs, and if the sender does not get an ACK for a segment, it sends it again. So the protocol makes sure all the data arrives safe and in the right order. That is what separates TCP from UDP: reliability. The price is mostly latency, because those checks are not free: a handshake first, then ACKs, and congestion control that slows the sender down when the network is full.
+
+**UDP**
+
+UDP prioritizes speed and removes all of that orchestration. There is no handshake, no ACK, no ordering and no congestion control. The data goes straight from sender to receiver. UDP does not split the data: each message the app sends becomes one datagram, so the app keeps messages small. Ordering matters less for DNS and live streaming, because if a datagram is lost, newer data arrives straight after and replaces it. (Video on demand, such as Netflix, normally runs over TCP, with HTTP.) The opposite case is a bank transaction, where the data must arrive complete and with integrity, even if a bit late, so it uses TCP.
+
 ## Optimizing for TCP
 
 - The core: the handshake costs a round trip, slow start applies to every new connection, and cwnd sets the throughput. So latency, not bandwidth, is usually the bottleneck.

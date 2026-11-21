@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>OSI model vs TCP/IP model</title>
+<style>
+  :root {
+    --bg: oklch(98.5% 0.004 260);
+    --surface: #fff;
+    --fg: oklch(22% 0.02 265);
+    --muted: oklch(46% 0.02 265);
+    --line: oklch(90% 0.01 265);
+    --tint-l: 95.5%; --tint-c: 0.035;
+    --ink-l: 40%;   --ink-c: 0.15;
+    --solid-l: 50%; --solid-c: 0.16;
+    --ring: oklch(55% 0.18 265);
+  }
+  :root[data-theme="dark"] {
+    --bg: oklch(17% 0.012 265);
+    --surface: oklch(21% 0.014 265);
+    --fg: oklch(94% 0.008 265);
+    --muted: oklch(72% 0.015 265);
+    --line: oklch(30% 0.015 265);
+    --tint-l: 25%;  --tint-c: 0.045;
+    --ink-l: 82%;   --ink-c: 0.11;
+    --solid-l: 45%; --solid-c: 0.14;
+    --ring: oklch(75% 0.14 265);
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: oklch(70% 0.14 265 / .35); }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-feature-settings: "tnum" 0;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 20px 18px 12px; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+  h1 { font-size: clamp(20px, 2.6vw, 26px); line-height: 1.15; margin: 0 0 4px; letter-spacing: -0.02em; font-weight: 750; text-wrap: balance; }
+  h1 .vs { color: var(--muted); font-weight: 500; }
+  .sub { margin: 0; color: var(--muted); max-width: 62ch; text-wrap: pretty; }
+  #theme {
+    flex: none; display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 12px; cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  #theme:hover { color: var(--fg); border-color: var(--muted); }
+  #theme:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  #theme svg { width: 14px; height: 14px; }
+  [data-embedded] #theme { display: none; }
+
+  /* ---------- main chart ---------- */
+  .chart {
+    display: grid;
+    grid-template-columns: minmax(190px, 1.35fr) 84px minmax(130px, 1fr) minmax(130px, 1fr) 14px minmax(132px, .85fr);
+    grid-template-rows: auto repeat(7, auto);
+    row-gap: 6px;
+  }
+  .row { display: contents; }
+  .row > .cell { grid-row: var(--r); }
+  .row > .cell:nth-child(1) { grid-column: 1; }
+  .row > .cell:nth-child(2) { grid-column: 2; }
+  .row > .cell:nth-child(3) { grid-column: 3; }
+  .row > .cell:nth-child(4) { grid-column: 4; }
+  .colhead {
+    font-size: 11px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); padding: 0 12px 2px; align-self: end;
+  }
+  .colhead.tcp { grid-column: 6; }
+  .cell {
+    --tint: oklch(var(--tint-l) var(--tint-c) var(--h));
+    --ink:  oklch(var(--ink-l) var(--ink-c) var(--h));
+    background: var(--tint); padding: 10px 12px; font-size: 13px; line-height: 1.4;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .cell.layer { border-radius: 12px 0 0 12px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 11px; }
+  .cell.dev { border-radius: 0 12px 12px 0; }
+  .num {
+    flex: none; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    background: oklch(var(--solid-l) var(--solid-c) var(--h)); color: #fff; position: relative;
+  }
+  .num svg { width: 22px; height: 22px; }
+  .num b {
+    position: absolute; right: -6px; top: -6px; min-width: 18px; height: 18px; border-radius: 9px;
+    background: var(--surface); color: var(--ink); font-size: 11px; line-height: 18px; text-align: center;
+    font-weight: 750; font-variant-numeric: tabular-nums; box-shadow: 0 1px 3px oklch(0% 0 0 / .18);
+  }
+  .lname { font-weight: 700; font-size: 14.5px; color: var(--ink); letter-spacing: -0.01em; }
+  .does { color: var(--fg); opacity: .86; font-size: 12.5px; }
+  .unit { font-weight: 650; color: var(--ink); }
+  .unit small { display: block; font-weight: 500; color: var(--fg); opacity: .75; font-size: 11.5px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    font-size: 11.5px; font-weight: 600; padding: 2px 7px; border-radius: 6px; white-space: nowrap;
+    background: color-mix(in oklab, var(--surface) 70%, transparent); color: var(--ink);
+  }
+  .dev { color: var(--fg); opacity: .9; }
+  .tcpchip { display: none; }
+
+  .tcp-cell {
+    grid-column: 6; border-radius: 12px; padding: 12px 14px;
+    background: oklch(var(--solid-l) var(--solid-c) var(--h)); color: #fff;
+    display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  }
+  .tcp-cell .tn { font-size: 11px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; opacity: .85; }
+  .tcp-cell .tname { font-size: 16px; font-weight: 750; letter-spacing: -0.01em; line-height: 1.2; }
+  .tcp-cell .tnote { font-size: 12px; opacity: .9; line-height: 1.35; }
+  .t-app { grid-row: 2 / span 3; }
+  .t-tr  { grid-row: 5; }
+  .t-in  { grid-row: 6; }
+  .t-na  { grid-row: 7 / span 2; }
+
+  /* sending / receiving rail under the chart */
+  .flow { display: flex; gap: 18px; flex-wrap: wrap; margin: 12px 2px 0; font-size: 12.5px; color: var(--muted); }
+  .flow span { display: inline-flex; align-items: center; gap: 6px; }
+  .flow svg { width: 16px; height: 16px; flex: none; }
+
+  /* ---------- differences ---------- */
+  .diff { margin-top: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .diff h2 { font-size: 15px; margin: 0; padding: 12px 14px 10px; letter-spacing: -0.01em; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 7px 14px; text-align: left; border-top: 1px solid var(--line); vertical-align: top; }
+  thead th { font-size: 11px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  tbody th { font-weight: 600; color: var(--muted); width: 22%; }
+  td { width: 39%; }
+
+  /* ---------- narrow screens: one card per layer ---------- */
+  @media (max-width: 760px) {
+    header { flex-direction: column; align-items: flex-start; }
+    #theme { position: absolute; top: 14px; right: 14px; }
+    .wrap { position: relative; padding: 16px 12px 20px; }
+    h1 { padding-right: 84px; }
+    .chart { display: flex; flex-direction: column; gap: 8px; }
+    .colhead, .tcp-cell { display: none; }
+    .row {
+      display: grid; grid-template-columns: 96px 1fr; border-radius: 14px; overflow: hidden;
+      background: oklch(var(--tint-l) var(--tint-c) var(--h));
+    }
+    .cell { border-radius: 0 !important; padding: 6px 12px 8px; background: none; }
+    .row > .cell:nth-child(n) { grid-row: auto; grid-column: auto; }
+    .cell.layer > span:nth-child(2) { flex: 1 1 calc(100% - 60px); min-width: 0; }
+    .row > .cell.layer:nth-child(n) { grid-column: 1 / -1; padding-top: 12px; padding-right: 12px; flex-wrap: wrap; }
+    .cell[data-k]::before {
+      content: attr(data-k); display: block; font-size: 10.5px; font-weight: 650; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--fg); opacity: .6; margin-bottom: 3px;
+    }
+    .row > .cell.dev:nth-child(n) { grid-column: 1 / -1; padding-bottom: 12px; }
+    .tcpchip { order: 3; margin: 2px 0 0 51px; align-self: flex-start; }
+    .tcpchip {
+      display: inline-block; font-size: 11px; font-weight: 650; padding: 3px 8px;
+      border-radius: 999px; color: #fff; background: oklch(var(--solid-l) var(--solid-c) var(--th));
+    }
+    tbody th { width: 30%; }
+    th, td { padding: 7px 10px; }
+  }
+</style>
+<script>
+/* Inside the notes site (same origin), follow the site's own theme (Quartz sets saved-theme on <html>).
+   Opened on its own, use the saved choice or the system setting. */
+function hostTheme() {
+  try { if (window.parent !== window) return window.parent.document.documentElement.getAttribute('saved-theme'); } catch (e) {}
+  return null;
+}
+(function () {
+  var t = hostTheme();
+  if (t) document.documentElement.setAttribute('data-embedded', '');
+  if (!t) { try { t = localStorage.getItem('osi-tcpip-theme'); } catch (e) {} }
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- all icons: 24 grid, 1.8 stroke, round caps, drawn for this page -->
+    <symbol id="i-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 8.5h18"/><circle cx="6" cy="6.25" r=".4" fill="currentColor"/><circle cx="8.2" cy="6.25" r=".4" fill="currentColor"/>
+      <path d="M7 12.5h6M7 15.5h10"/>
+    </symbol>
+    <symbol id="i-pres" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2.5"/>
+    </symbol>
+    <symbol id="i-sess" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9h12.5"/><path d="M13.5 5.5 17 9l-3.5 3.5"/><path d="M20 15H7.5"/><path d="M10.5 11.5 7 15l3.5 3.5"/>
+    </symbol>
+    <symbol id="i-trans" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="8" width="5" height="8" rx="1.3"/><rect x="9.5" y="8" width="5" height="8" rx="1.3"/><path d="M16.5 12H21"/><path d="M18.5 9.5 21 12l-2.5 2.5"/>
+    </symbol>
+    <symbol id="i-net" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="5" cy="17.5" r="2.2"/><circle cx="12" cy="6.5" r="2.2"/><circle cx="19" cy="17.5" r="2.2"/>
+      <path d="M6.2 15.6 10.8 8.4M13.2 8.4l4.6 7.2"/><path d="M7.2 17.5h9.6" stroke-dasharray="1.6 2.4"/>
+    </symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2.5" y="7" width="19" height="10" rx="2.2"/><path d="M6 13.5v-1.5M9.3 13.5v-1.5M12.6 13.5v-1.5M15.9 13.5v-1.5"/><circle cx="18.5" cy="10" r=".5" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-phys" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 12c1.6-4.5 3.2-4.5 4.75 0s3.15 4.5 4.75 0 3.15-4.5 4.75 0 3.15 4.5 4.75 0"/>
+      <path d="M4 20h2M9 18v4M14 20h2M19 18v4" stroke-width="1.6"/>
+    </symbol>
+    <symbol id="i-down" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v11M4 9.5l4 4 4-4"/></symbol>
+    <symbol id="i-up" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13.5v-11M4 6.5l4-4 4 4"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>OSI model <span class="vs">vs</span> TCP/IP model</h1>
+      <p class="sub">Two maps of the same network. OSI splits it into 7 layers for learning and troubleshooting; TCP/IP uses 4, and is what the internet actually runs.</p>
+    </div>
+    <button id="theme" type="button" aria-label="Switch light or dark theme">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></svg>
+      Theme
+    </button>
+  </header>
+
+  <div class="chart" role="table" aria-label="OSI layers mapped to TCP/IP layers">
+    <div class="row" role="row">
+      <div class="colhead" role="columnheader">OSI layer</div>
+      <div class="colhead" role="columnheader">Data unit</div>
+      <div class="colhead" role="columnheader">Protocols</div>
+      <div class="colhead" role="columnheader">Devices</div>
+      <div aria-hidden="true"></div>
+      <div class="colhead tcp" role="columnheader">TCP/IP layer</div>
+    </div>
+
+    <div class="row" role="row" style="--r:2; --h:295; --th:295">
+      <div class="cell layer" role="cell">
+        <span class="num"><svg aria-hidden="true"><use href="#i-app"/></svg><b>7</b></span>
+        <span><span class="lname">Application</span><span class="does" style="display:block">Services the user's app talks to: web, mail, names</span></span>
+        <span class="tcpchip">TCP/IP: Application</span>
+      </div>
+      <div class="cell unit" role="cell" data-k="Data unit">Data</div>
+      <div class="cell" role="cell" data-k="Protocols"><span class="tags"><span class="tag">HTTP</span><span class="tag">DNS</span><span class="tag">SMTP</span><span class="tag">SSH</span><span class="tag">FTP</span></span></div>
+      <div class="cell dev" role="cell" data-k="Devices">Hosts, proxies, L7 firewalls</div>
+    </div>
+
+    <div class="row" role="row" style="--r:3; --h:262; --th:295">
+      <div class="cell layer" role="cell">
+        <span class="num"><svg aria-hidden="true"><use href="#i-pres"/></svg><b>6</b></span>
+        <span><span class="lname">Presentation</span><span class="does" style="display:block">Formats, encrypts and compresses the data</span></span>
+        <span class="tcpchip">TCP/IP: Application</span>
+      </div>
+      <div class="cell unit" role="cell" data-k="Data unit">Data</div>
+      <div class="cell" role="cell" data-k="Protocols"><span class="tags"><span class="tag">TLS</span><span class="tag">UTF-8</span><span class="tag">JPEG</span><span class="tag">gzip</span></span></div>
+      <div class="cell dev" role="cell" data-k="Devices">Hosts (done in software)</div>
+    </div>
+
+    <div class="row" role="row" style="--r:4; --h:222; --th:295">
+      <div class="cell layer" role="cell">
+        <span class="num"><svg aria-hidden="true"><use href="#i-sess"/></svg><b>5</b></span>
+        <span><span class="lname">Session</span><span class="does" style="display:block">Opens, keeps and closes a conversation</span></span>
+        <span class="tcpchip">TCP/IP: Application</span>
+      </div>
+      <div class="cell unit" role="cell" data-k="Data unit">Data</div>
+      <div class="cell" role="cell" data-k="Protocols"><span class="tags"><span class="tag">Sockets API</span><span class="tag">RPC</span><span class="tag">NetBIOS</span></span></div>
+      <div class="cell dev" role="cell" data-k="Devices">Hosts (done in software)</div>
+    </div>
+
+    <div class="row" role="row" style="--r:5; --h:160; --th:160">
+      <div class="cell layer" role="cell">
+        <span class="num"><svg aria-hidden="true"><use href="#i-trans"/></svg><b>4</b></span>
+        <span><span class="lname">Transport</span><span class="does" style="display:block">Port to port delivery, ordering, retries, flow control</span></span>
+        <span class="tcpchip">TCP/IP: Transport</span>
+      </div>
+      <div class="cell unit" role="cell" data-k="Data unit">Segment<small>datagram for UDP</small></div>
+      <div class="cell" role="cell" data-k="Protocols"><span class="tags"><span class="tag">TCP</span><span class="tag">UDP</span><span class="tag">QUIC</span></span></div>
+      <div class="cell dev" role="cell" data-k="Devices">Hosts, L4 load balancers, firewalls</div>
+    </div>
+
+    <div class="row" role="row" style="--r:6; --h:75; --th:75">
+      <div class="cell layer" role="cell">
+        <span class="num"><svg aria-hidden="true"><use href="#i-net"/></svg><b>3</b></span>
+        <span><span class="lname">Network</span><span class="does" style="display:block">IP addresses and routing between networks</span></span>
+        <span class="tcpchip">TCP/IP: Internet</span>
+      </div>
+      <div class="cell unit" role="cell" data-k="Data unit">Packet</div>
+      <div class="cell" role="cell" data-k="Protocols"><span class="tags"><span class="tag">IPv4</span><span class="tag">IPv6</span><span class="tag">ICMP</span><span class="tag">IPsec</span></span></div>
+      <div class="cell dev" role="cell" data-k="Devices">Routers, L3 switches</div>
+    </div>
+
+    <div class="row" role="row" style="--r:7; --h:48; --th:30">
+      <div class="cell layer" role="cell">
+        <span class="num"><svg aria-hidden="true"><use href="#i-link"/></svg><b>2</b></span>
+        <span><span class="lname">Data link</span><span class="does" style="display:block">Frames, MAC addresses, error checks on one link</span></span>
+        <span class="tcpchip">TCP/IP: Network access</span>
+      </div>
+      <div class="cell unit" role="cell" data-k="Data unit">Frame</div>
+      <div class="cell" role="cell" data-k="Protocols"><span class="tags"><span class="tag">Ethernet</span><span class="tag">Wi-Fi</span><span class="tag">ARP</span><span class="tag">VLAN</span></span></div>
+      <div class="cell dev" role="cell" data-k="Devices">Switches, bridges, access points, NICs</div>
+    </div>
+
+    <div class="row" role="row" style="--r:8; --h:20; --th:30">
+      <div class="cell layer" role="cell">
+        <span class="num"><svg aria-hidden="true"><use href="#i-phys"/></svg><b>1</b></span>
+        <span><span class="lname">Physical</span><span class="does" style="display:block">Raw bits as voltage, light or radio</span></span>
+        <span class="tcpchip">TCP/IP: Network access</span>
+      </div>
+      <div class="cell unit" role="cell" data-k="Data unit">Bits</div>
+      <div class="cell" role="cell" data-k="Media"><span class="tags"><span class="tag">Copper</span><span class="tag">Fibre</span><span class="tag">Radio</span><span class="tag">DSL</span></span></div>
+      <div class="cell dev" role="cell" data-k="Devices">Cables, hubs, repeaters, transceivers</div>
+    </div>
+
+    <div class="tcp-cell t-app" role="cell" style="--h:295"><span class="tn">Layer 4</span><span class="tname">Application</span><span class="tnote">OSI 7, 6 and 5 in one: the app and its libraries handle it all</span></div>
+    <div class="tcp-cell t-tr" role="cell" style="--h:160"><span class="tn">Layer 3</span><span class="tname">Transport</span><span class="tnote">Same as OSI 4</span></div>
+    <div class="tcp-cell t-in" role="cell" style="--h:75"><span class="tn">Layer 2</span><span class="tname">Internet</span><span class="tnote">Same as OSI 3</span></div>
+    <div class="tcp-cell t-na" role="cell" style="--h:30"><span class="tn">Layer 1</span><span class="tname">Network access</span><span class="tnote">OSI 2 and 1 in one: the NIC, its driver and the medium</span></div>
+  </div>
+
+  <p class="flow">
+    <span><svg aria-hidden="true"><use href="#i-down"/></svg>Sending: each layer wraps the data from the one above in its own header</span>
+    <span><svg aria-hidden="true"><use href="#i-up"/></svg>Receiving: each layer reads and strips its header, then passes the rest up</span>
+  </p>
+
+  <section class="diff">
+    <h2>Key differences</h2>
+    <table>
+      <thead><tr><th scope="col">Feature</th><th scope="col">OSI model</th><th scope="col">TCP/IP model</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Made by</th><td>ISO, published 1984</td><td>US DoD research (ARPANET), in use from 1983</td></tr>
+        <tr><th scope="row">Layers</th><td>7</td><td>4</td></tr>
+        <tr><th scope="row">Approach</th><td>Model first, protocol independent</td><td>Protocols first, the model describes them</td></tr>
+        <tr><th scope="row">Used for</th><td>Teaching and naming problems ("a layer 2 issue")</td><td>Real networks, the internet and every OS kernel</td></tr>
+        <tr><th scope="row">Complexity</th><td>More layers, stricter split</td><td>Simpler, looser boundaries</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+<script>
+document.getElementById('theme').addEventListener('click', function () {
+  var r = document.documentElement;
+  var t = r.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  r.setAttribute('data-theme', t);
+  try { localStorage.setItem('osi-tcpip-theme', t); } catch (e) {}
+});
+(function () {
+  if (!hostTheme()) return;
+  var host = window.parent.document.documentElement;
+  new MutationObserver(function () {
+    var t = hostTheme();
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  }).observe(host, { attributes: true, attributeFilter: ['saved-theme'] });
+})();
+</script>
+</body>
+</html>
