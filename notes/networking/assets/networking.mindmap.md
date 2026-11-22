@@ -16,6 +16,7 @@ markmap:
 - Swaps peer addresses for a call
 
 ## 4 Transport (ports)
+- Unit: segment (TCP) or datagram (UDP)
 ### TCP
 - Handshake: SYN, SYN-ACK, ACK, one round trip
 - rwnd protects the receiver, cwnd protects the network
@@ -25,7 +26,7 @@ markmap:
 - Reuse connections to avoid new handshakes
 ### UDP
 - No handshake, no ACK, no ordering
-- One message = one datagram
+- One message = one datagram, inside one packet
 - Used for calls, games, DNS, QUIC
 - Peer to peer runs on UDP: see NAT traversal
 ### Ports
@@ -33,6 +34,7 @@ markmap:
 - Connection = source IP:port + destination IP:port
 
 ## 3 Network (IP)
+- Unit: packet, always, for TCP and UDP
 ### Router and routing table
 - Reads up to layer 3, new frame at every hop
 - Longest prefix match, TTL minus 1
@@ -57,6 +59,7 @@ markmap:
 - Peering and transit
 
 ## 2 Data link
+- Unit: frame, wraps the packet
 ### Frames and MAC
 - MAC works per link, IP works end to end
 ### ARP
@@ -65,6 +68,7 @@ markmap:
 - Only inside one subnet, so other subnets use the gateway's MAC
 
 ## 1 Physical
+- Unit: bits
 ### Bits as a signal
 - Fiber core, slow edge: the slowest link wins
 ### Latency and bandwidth
