@@ -1,0 +1,155 @@
+version: 1
+title: NAT traversal for peer-to-peer
+
+nodes:
+  p1:   { label: Peer 1,          icon: laptop, sub: "192.0.2.10:50000" }
+  nat1: { label: Peer 1 router,   icon: router, sub: NAT }
+  net:  { label: Internet,        icon: cloud }
+  stun: { label: STUN server,     icon: server, sub: "198.51.100.50" }
+  sig:  { label: call.example.com, icon: server, sub: signalling }
+  turn: { label: TURN relay,      icon: server }
+  nat2: { label: Peer 2 router,   icon: router, sub: NAT }
+  p2:   { label: Peer 2,          icon: laptop, sub: "192.0.2.20:50000" }
+
+links:
+  - [p1, nat1]
+  - [nat1, net]
+  - [net, stun]
+  - [net, sig]
+  - [net, turn]
+  - [net, nat2]
+  - [nat2, p2]
+
+tracks:
+  stun:   { label: STUN,           color: orange }
+  signal: { label: Signalling,     color: blue }
+  punch:  { label: Hole punching,  color: purple }
+  media:  { label: Call (direct),  color: green }
+  relay:  { label: Call (relay),   color: yellow }
+
+chapters:
+  - title: 1. What is my public address?
+    desc: Each peer asks a public STUN server what address it sees. Use the same socket the call will use.
+    steps:
+      - from: p1
+        to: stun
+        via: [nat1, net]
+        track: stun
+        label: Binding request
+        data: { src: "192.0.2.10:50000" }
+        at:
+          nat1:
+            set: { src: "203.0.113.5:61001" }
+            desc: "The router swaps the private address for its public one and records the mapping."
+      - from: stun
+        to: p1
+        via: [net, nat1]
+        track: stun
+        label: "You are 203.0.113.5:61001"
+      - from: p2
+        to: stun
+        via: [nat2, net]
+        track: stun
+        label: Binding request
+        data: { src: "192.0.2.20:50000" }
+        at:
+          nat2:
+            set: { src: "198.51.100.9:62002" }
+            desc: "Peer 2's router does the same."
+      - from: stun
+        to: p2
+        via: [net, nat2]
+        track: stun
+        label: "You are 198.51.100.9:62002"
+
+  - title: 2. Exchange addresses (signalling)
+    desc: Both apps are already clients of the app's own public server. It passes each address to the other peer.
+    steps:
+      - from: p1
+        to: sig
+        via: [nat1, net]
+        track: signal
+        label: "Call Peer 2, my address is 203.0.113.5:61001"
+      - from: sig
+        to: p2
+        via: [net, nat2]
+        track: signal
+        label: "Peer 1 is at 203.0.113.5:61001"
+      - from: p2
+        to: sig
+        via: [nat2, net]
+        track: signal
+        label: "Accepted, my address is 198.51.100.9:62002"
+      - from: sig
+        to: p1
+        via: [net, nat1]
+        track: signal
+        label: "Peer 2 is at 198.51.100.9:62002"
+
+  - title: 3. Hole punching
+    desc: Both peers send UDP to each other's address in a loop. Each outgoing packet creates an entry in its own NAT, so the other's packets then get through.
+    steps:
+      - parallel:
+          - from: p1
+            to: nat2
+            via: [nat1, net]
+            track: punch
+            label: punch (dropped, but opens my NAT)
+            data: { dst: "198.51.100.9:62002" }
+          - from: p2
+            to: nat1
+            via: [nat2, net]
+            track: punch
+            label: punch (dropped, but opens my NAT)
+            data: { dst: "203.0.113.5:61001" }
+      - from: p1
+        to: p2
+        via: [nat1, net, nat2]
+        track: punch
+        label: punch again
+        desc: "Now Peer 2's NAT has an entry for Peer 1, so this packet gets through."
+      - from: p2
+        to: p1
+        via: [nat2, net, nat1]
+        track: punch
+        label: "Got it, it works"
+        desc: "UDP has no ACK. Any packet from the peer is the signal that the hole is open."
+
+  - title: 4. The call, and keepalives
+    desc: Direct traffic flows. Small keepalive packets stop the NAT entries from expiring while the call is open.
+    steps:
+      - from: p1
+        to: p2
+        via: [nat1, net, nat2]
+        track: media
+        label: audio and video
+        mode: flow
+        both: true
+
+  - title: 5. Fallback, a TURN relay
+    desc: If the direct path fails (symmetric NAT, or UDP blocked), both peers send to a public relay that forwards the traffic. It always works, but costs bandwidth and adds delay.
+    steps:
+      - from: p1
+        to: turn
+        via: [nat1, net]
+        track: relay
+        label: allocate request
+      - from: p2
+        to: turn
+        via: [nat2, net]
+        track: relay
+        label: allocate request
+      - from: p1
+        to: turn
+        via: [nat1, net]
+        track: relay
+        label: audio and video
+        mode: flow
+        both: true
+      - from: turn
+        to: p2
+        via: [net, nat2]
+        track: relay
+        label: relayed to Peer 2
+        mode: flow
+        both: true

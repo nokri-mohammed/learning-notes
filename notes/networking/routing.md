@@ -117,7 +117,11 @@ description: How routers move a packet hop by hop, and why MAC addresses change 
 - Whoever sends first, the packet reaches the other NAT, which has no entry for it and drops it.
 - Nobody can be "the server", because neither is reachable from outside.
 
-Each solution below creates the next problem.
+<iframe src="assets/nat-problem.html" width="100%" height="600" style="border:0" loading="lazy" title="Why two peers behind NAT cannot talk directly"></iframe>
+
+**The solution, step by step.** Each solution below creates the next problem.
+
+<iframe src="assets/nat-traversal.html" width="100%" height="800" style="border:0" loading="lazy" title="NAT traversal: STUN, signalling, hole punching and TURN"></iframe>
 
 1. **Problem:** each NAT drops packets from outside that it has no record of, and the only way to get a record is to send out first.
    - Sending out needs the other peer's public IP and port. Peer 1 knows neither its own nor Peer 2's.

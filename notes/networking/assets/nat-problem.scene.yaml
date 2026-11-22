@@ -1,0 +1,41 @@
+version: 1
+title: Why two peers behind NAT cannot talk directly
+
+nodes:
+  p1:   { label: Peer 1,        icon: laptop, sub: "192.0.2.10:50000" }
+  nat1: { label: Peer 1 router, icon: router, sub: NAT }
+  net:  { label: Internet,      icon: cloud }
+  nat2: { label: Peer 2 router, icon: router, sub: NAT }
+  p2:   { label: Peer 2,        icon: laptop, sub: "192.0.2.20:50000" }
+
+links:
+  - [p1, nat1]
+  - [nat1, net]
+  - [net, nat2]
+  - [nat2, p2]
+
+tracks:
+  direct: { label: Direct packet, color: red }
+
+chapters:
+  - title: 1. Peer 1 sends first
+    desc: Each router keeps a table of connections that started from inside. A packet from outside with no entry is dropped.
+    steps:
+      - from: p1
+        to: nat2
+        via: [nat1, net]
+        track: direct
+        label: hello (dropped)
+        desc: "Peer 2's router has no entry for this packet, so it drops it. Peer 2 never sees it."
+        data: { src: "192.0.2.10:50000", dst: "198.51.100.9:62002" }
+
+  - title: 2. Peer 2 tries to answer
+    desc: The same thing happens in the other direction. Neither side can start or reply.
+    steps:
+      - from: p2
+        to: nat1
+        via: [nat2, net]
+        track: direct
+        label: reply (dropped)
+        desc: "Peer 1's router has no entry for this packet either, so it drops it. Neither peer can reach the other."
+        data: { src: "192.0.2.20:50000", dst: "203.0.113.5:61001" }
