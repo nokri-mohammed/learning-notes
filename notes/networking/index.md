@@ -47,5 +47,6 @@ Also: [TCP](tcp-basics.md) is a handshake, then `min(cwnd, rwnd)` in flight. [Sp
 
 ## Also
 
+- [TLS](tls.md): encryption and certificates on top of TCP.
 - [Reverse proxy](reverse-proxy.md): one front door for many services.
 - [The internet](internet.md): many networks joined by BGP.

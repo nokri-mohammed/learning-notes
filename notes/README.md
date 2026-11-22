@@ -7,6 +7,7 @@ One line per note, grouped by topic. The site is at https://nokri-mohammed.githu
 - [Speed: latency and bandwidth](networking/speed.md): why waiting matters more than pipe width.
 - [TCP](networking/tcp-basics.md): handshake, flow control and congestion control.
 - [OSI model: the journey of a file](networking/osi-file-journey.md): who does what (browser, kernel, network card, routers) as a file travels.
+- [TLS](networking/tls.md): encryption, certificates and the handshake cost on top of TCP.
 - [Routing](networking/routing.md): routers, routing tables, MAC vs IP.
 - [The internet](networking/internet.md): independent networks, BGP, peering and transit.
 - [Reverse proxy](networking/reverse-proxy.md): one front door that routes requests to many backend services.
