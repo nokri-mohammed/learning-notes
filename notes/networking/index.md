@@ -2,7 +2,7 @@
 title: Networking
 tags: [networking]
 date: 2026-11-15
-description: What networking is, and the packet's journey in a few lines: layers, ARP, routing, NAT and peer to peer.
+description: "What networking is, and the packet's journey in a few lines: layers, ARP, routing, NAT and peer to peer."
 ---
 
 **Networking** is how computers send data to each other: the rules (protocols) and the hardware (cables, cards, routers) that move bytes from one machine to another.
