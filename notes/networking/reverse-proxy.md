@@ -8,6 +8,8 @@ description: One front door that routes requests to many backend services.
 **Core:** A reverse proxy is one front door that routes requests to many backend services by hostname or path.
 
 ## Key points
+- **Problem:** many services run on one server, but only ports 80 and 443 are open, and each service would need its own certificate and login.
+- **Solution:** one reverse proxy in front, which routes requests to the right service.
 - Clients talk only to the proxy, never to the backends directly.
 - It routes by hostname or path, so many apps share ports 80 and 443.
 - It can terminate TLS once, so backends need no certificates.

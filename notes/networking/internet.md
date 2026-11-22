@@ -16,6 +16,9 @@ description: The internet is many independent networks that agree to pass traffi
 
 ## How networks agree
 
+- **Problem:** independent networks must know which addresses each one can reach, and agree on who carries whose traffic.
+- **Solution:** BGP to announce reachability, and peering or transit as the agreements.
+
 - BGP is the protocol where networks announce which addresses they can reach.
 - Peering: two networks swap traffic directly, usually without payment.
 - Transit: a smaller network pays a larger one to carry its traffic.

@@ -9,11 +9,17 @@ description: "How TCP makes the network reliable: handshake, flow control and co
 
 ## Three-way handshake
 
+- **Problem:** before sending data, both sides must agree on sequence numbers and check the other side is there.
+- **Solution:** the handshake.
+
 - SYN, SYN-ACK, ACK. One round trip before any data.
 - Only the two endpoints take part. Routers just forward.
 - TLS adds one or two more round trips, then the request takes another.
 
 ## Flow and congestion control
+
+- **Problem:** a fast sender can overflow the receiver, or flood the network.
+- **Solution:** two windows, one for each. rwnd protects the receiver, cwnd protects the network.
 
 - The sender keeps at most `min(cwnd, rwnd)` bytes in flight.
   - rwnd: free space in the receiver's buffer, sent back in every ACK.
@@ -33,6 +39,9 @@ description: "How TCP makes the network reliable: handshake, flow control and co
 - The kernel adjusts windows by itself. You tune it only when its limits are too low.
 
 ## Head-of-line blocking
+
+- **Problem:** one lost segment delays all the data behind it.
+- **Solution:** none inside TCP. If old data is worthless, use UDP (or QUIC).
 
 - TCP delivers bytes in order. If one segment is lost, later segments wait in the receiver's buffer until the lost one is resent.
   - The app sees only a delay, not the resend.

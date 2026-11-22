@@ -31,8 +31,8 @@ description: Why network speed is mostly about waiting (latency), not pipe width
 
 ## What to do about it
 
-- Bandwidth keeps growing. Latency cannot beat the speed of light.
-- So cut round trips, move data closer (CDN), cache and prefetch.
+- **Problem:** bandwidth keeps growing, but latency cannot beat the speed of light, so a faster link does not fix a slow page.
+- **Solution:** cut round trips, move data closer (CDN), cache and prefetch.
 
 ## Example
 
