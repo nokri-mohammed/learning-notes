@@ -105,12 +105,22 @@ description: How routers move a packet hop by hop, and why MAC addresses change 
 
 ### NAT traversal for peer-to-peer
 
-Used by calls, games and file sharing, where two peers behind NAT talk directly. Normal clients (a browser calling a server) have no problem, because they start the connection from inside and create the NAT entry themselves.
+**Goal:** two people, Peer 1 and Peer 2, want to talk directly (a call, a game, file sharing). Each is behind their own home router with NAT.
+
+**The normal case: client and server**
+- The client (a browser) behind NAT calls a server, such as `198.51.100.7:443`.
+- The client sends first. Its NAT creates a table entry on the way out, so the server's reply finds the entry and gets in.
+- The server has a public IP and a fixed port that everyone knows, so the client always knows where to send. No problem.
+
+**The peer case: why it breaks**
+- Both peers are behind NAT, so neither has a public server address.
+- Whoever sends first, the packet reaches the other NAT, which has no entry for it and drops it.
+- Nobody can be "the server", because neither is reachable from outside.
 
 Each solution below creates the next problem.
 
-1. **Problem:** a NAT drops packets from outside that it has no record of. Two peers cannot start talking.
-   - The only way to get a record is to send out first. That needs the other peer's public IP and port.
+1. **Problem:** each NAT drops packets from outside that it has no record of, and the only way to get a record is to send out first.
+   - Sending out needs the other peer's public IP and port. Peer 1 knows neither its own nor Peer 2's.
 2. **Problem:** I do not know my own public IP and port. The app only sees its private address.
    - **Solution:** ask a public STUN server. It reports the source IP and port it sees on the packet, after NAT rewrote it. Send it from the same socket the call will use, so the NAT mapping stays the same.
 3. **Problem:** I do not know Bob's address, and he does not know mine.
