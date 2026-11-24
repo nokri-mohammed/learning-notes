@@ -1,120 +1,66 @@
 version: 1
 deck: "Networking"
 cards:
-  - q: "What is networking?"
-    a: "How computers send data to each other: the rules (protocols) and the hardware (cables, cards, routers) that move bytes between machines."
-    tag: basics
   - q: "What are the two parts of network speed?"
     a: "Latency (the waiting) and bandwidth (the pipe width). Latency is usually the bottleneck."
-    tag: speed
-  - q: "What four delays make up latency?"
-    a: |
-      Propagation (distance / signal speed)
-      Transmission (packet size / link rate)
-      Processing (a router reads the header)
-      Queuing (waiting in a buffer)
     tag: speed
   - q: "What is RTT?"
     a: "Round-trip time: the time to go there and back."
     tag: speed
-  - q: "Why can no hardware beat the speed of light limit?"
-    a: "Light in fiber travels at about 200,000 km/s, so distance sets a hard minimum delay."
-    tag: speed
-  - q: "Which link sets your usable bandwidth?"
-    a: "The slowest link between you and the server, usually at the edge (home, mobile), not the fiber core."
-    tag: speed
   - q: "How do you make a site faster when latency is the problem?"
     a: "Cut round trips, move data closer (CDN), cache and prefetch."
-    tag: speed
-  - q: "How long does 10 MB take over a 1 Mbps link?"
-    a: "80 seconds. 10 MB is 80 megabits, and 1 byte is 8 bits."
     tag: speed
   - q: "What does the TCP three-way handshake do?"
     a: "SYN, SYN-ACK, ACK. It opens a connection and costs one round trip before any data."
     tag: tcp
-  - q: "Who takes part in the TCP handshake?"
-    a: "Only the two endpoints. Routers just forward the packets."
-    tag: tcp
-  - q: "What is the most a TCP sender keeps in flight?"
-    a: "min(cwnd, rwnd) bytes."
-    tag: tcp
-  - q: "What is rwnd?"
-    a: "The receiver's free buffer space, sent back in every ACK."
-    tag: tcp
-  - q: "What is cwnd?"
-    a: "The sender's own guess of what the network can carry. It is never sent over the wire."
-    tag: tcp
-  - q: "How does slow start work?"
-    a: "cwnd begins around 10 packets and doubles each round trip. Congestion avoidance then grows it slowly. On loss it is cut."
-    tag: tcp
-  - q: "What happens when the receiving app reads too slowly?"
-    a: "The receive buffer fills, rwnd shrinks to 0 and the sender stops. In Node, write() returns false (backpressure)."
-    tag: tcp
-  - q: "What is head-of-line blocking?"
-    a: "TCP delivers bytes in order, so one lost segment makes later data wait until it is resent."
-    tag: tcp
-  - q: "What is the bandwidth-delay product?"
-    a: "Bandwidth x RTT: the data that must be in flight to fill the pipe."
-    tag: tcp
-  - q: "In what order is a file wrapped on the sender?"
+  - q: "When do you use TCP, and when UDP?"
     a: |
-      App message
-      TCP segments
-      IP packets
-      Frames
-      Bits as a signal
-    tag: layers
-  - q: "Where does TCP splitting into segments happen?"
-    a: "In the kernel."
-    tag: layers
-  - q: "Where does IP add addresses?"
-    a: "In the kernel."
-    tag: layers
-  - q: "Where is a frame added?"
-    a: "In the network card and its driver."
-    tag: layers
-  - q: "What are the MTU and the typical MSS?"
-    a: "MTU is 1500 bytes of frame payload. MSS is about 1460 bytes of TCP data."
-    tag: layers
-  - q: "How does the receiver find the right TCP connection?"
-    a: "By the 4-tuple: source IP, source port, destination IP, destination port."
-    tag: layers
-  - q: "Why does HTTP need to parse the TCP stream?"
-    a: "TCP has no message boundaries, so HTTP finds them: headers first, then the body length."
-    tag: layers
-  - q: "How far up the stack does a router read?"
-    a: "Only up to layer 3, the destination IP address."
-    tag: routing
-  - q: "How does a router pick the next hop?"
-    a: "From its routing table. The longest matching prefix wins."
-    tag: routing
-  - q: "What does the TTL do?"
-    a: "Each router subtracts 1. At 0 the packet is dropped, so it cannot loop forever."
-    tag: routing
+      TCP: data must arrive complete and in order (files, JSON). Lost data is resent.
+      UDP: no guarantee, no waiting. Use it when old data is worthless (calls, games, DNS).
+    tag: tcp
+  - q: "Why reuse connections instead of opening new ones?"
+    a: "Every new connection pays the handshake (and TLS) round trips and starts with slow start. Reuse avoids all of it."
+    tag: tcp
   - q: "What changes at every hop, and what stays the same?"
-    a: "MAC addresses change at every hop. IP addresses stay the same end to end."
+    a: |
+      MAC addresses change: they only work on one link.
+      IP addresses stay the same: they name the final destination.
+    tag: routing
+  - q: "Same subnet or not: where does the packet go?"
+    a: |
+      Same subnet: send directly.
+      Anything else: send to the default gateway.
     tag: routing
   - q: "What does ARP do?"
-    a: "Finds the MAC address of the next hop for a given IP address."
+    a: |
+      Problem: the frame needs a MAC, but I only know the IP.
+      Solution: check the cache, else broadcast "who has this IP?". The owner replies. For another subnet, ARP for the gateway's MAC.
     tag: routing
-  - q: "What does a network card do with a frame whose destination MAC is not its own?"
-    a: "It drops it."
-    tag: routing
-  - q: "Who owns the internet?"
-    a: "No one. It is many independent networks (ISPs, carriers, cloud companies) that agree to pass traffic between each other."
-    tag: internet
-  - q: "What is an autonomous system (AS)?"
-    a: "One independent network with its own AS number."
-    tag: internet
-  - q: "What is BGP?"
-    a: "The protocol where networks announce which addresses they can reach."
-    tag: internet
-  - q: "What is the difference between peering and transit?"
-    a: "Peering: two networks swap traffic directly, usually free. Transit: a smaller network pays a larger one to carry its traffic."
-    tag: internet
-  - q: "Who sets standards and hands out addresses?"
-    a: "The IETF writes standards. IANA and the regional registries (RIRs) hand out IP blocks and AS numbers."
-    tag: internet
+  - q: "What does NAT do?"
+    a: "The router keeps a table: private IP:port to public IP:port. Many devices share one public IP, and replies are matched through the table."
+    tag: nat
+  - q: "Why are incoming packets dropped, and how do you let them in?"
+    a: |
+      Problem: an unrequested packet has no NAT table entry, so it is dropped.
+      Solution: a public IP on the server, or port forwarding (a permanent table entry).
+    tag: nat
+  - q: "Why do NAT entries expire, and what fixes it?"
+    a: |
+      Problem: idle entries time out, so a long-lived connection silently breaks.
+      Solution: keepalives, small packets that reset the timer.
+    tag: nat
+  - q: "What identifies a connection?"
+    a: "Four things: source IP and port, destination IP and port."
+    tag: nat
+  - q: "What are the three jobs of TLS?"
+    a: "Encryption (nobody can read it), authentication (the server is who it claims), integrity (nobody can change it unnoticed)."
+    tag: tls
+  - q: "What does a certificate prove?"
+    a: "That the public key belongs to that server. A trusted CA signed it, and the chain ends at a root your browser or OS trusts."
+    tag: tls
+  - q: "What does a DNS A record do?"
+    a: "Turns a name into a public IPv4 address. It knows nothing about ports or local servers."
+    tag: basics
   - q: "What does a reverse proxy do?"
-    a: "One front door that routes requests to many backends by hostname or path, and can terminate TLS, cache and rate-limit."
-    tag: proxy
+    a: "One front door that routes requests to many backends by hostname or path, and can end TLS once."
+    tag: basics

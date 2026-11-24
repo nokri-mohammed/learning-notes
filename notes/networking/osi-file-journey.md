@@ -7,7 +7,17 @@ description: Who does what (browser, kernel, network card, routers) as a file tr
 
 **Core:** A file is wrapped layer by layer on the sender (browser, kernel, network card), forwarded by routers that read only up to layer 3, then unwrapped in reverse on the receiver.
 
-## Key points
+## In short
+
+1. **Browser** builds the request with the file inside it.
+2. **Kernel (TCP)** opens a connection, then splits the data into segments with ports.
+3. **Kernel (IP)** adds the source and destination IP address: now it is a packet.
+4. **Network card** adds MAC addresses: now it is a frame, and it goes out as a signal.
+5. **Routers** pass it hop by hop. Each hop makes a new frame (new MACs), and the IP stays the same.
+6. **Receiver** unwraps in reverse: card, kernel IP, kernel TCP (puts segments in order and sends ACKs).
+7. **App** reads the data from the kernel's buffer.
+
+## Details
 
 **Sender: who does what**
 
