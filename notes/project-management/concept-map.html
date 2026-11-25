@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project management concept map</title>
+<style>
+  :root { --bg:#fafafa; --fg:#1e1e1e; --card:#ffffff; --muted:#6b6b6b; --grp:#e4e4e4; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161618; --fg:#ececec; --card:#222225; --muted:#9a9a9a; --grp:#3a3a3e; } }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:14px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; overflow:hidden; }
+  #view { position:absolute; inset:0; cursor:grab; touch-action:none; }
+  #view.drag { cursor:grabbing; }
+  #world { position:absolute; left:0; top:0; transform-origin:0 0; }
+  svg { position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; }
+  .grp { position:absolute; box-sizing:border-box; border:2px dashed var(--grp); border-radius:14px; }
+  .grp span { position:absolute; left:16px; top:10px; font-weight:700; font-size:20px; color:var(--muted); letter-spacing:.02em; }
+  .card { position:absolute; box-sizing:border-box; padding:10px 12px; border:2px solid var(--c); border-radius:10px; overflow:hidden;
+          background:color-mix(in srgb, var(--c) 10%, var(--card)); }
+  .card.plain { border-color:var(--grp); background:var(--card); }
+  .card h2 { margin:0 0 4px; font-size:15px; line-height:1.25; }
+  .card h1 { margin:0 0 6px; font-size:24px; }
+  .card p { margin:0 0 3px; }
+  .elabel { font-size:13px; fill:var(--muted); paint-order:stroke; stroke:var(--bg); stroke-width:4px; }
+  #bar { position:fixed; right:12px; top:10px; display:flex; gap:6px; z-index:5; }
+  #bar button { font:600 13px system-ui, sans-serif; padding:5px 12px; border:1px solid var(--grp); border-radius:999px; background:var(--card); color:var(--fg); cursor:pointer; }
+  #hint { position:fixed; left:12px; bottom:8px; font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div id="view"><div id="world"><svg id="edges"></svg></div></div>
+<div id="bar"><button id="zin" type="button">+</button><button id="zout" type="button">-</button><button id="fit" type="button">Fit</button></div>
+<div id="hint">Drag to pan, scroll or pinch to zoom.</div>
+<script>
+const COL = {1:"#e5484d",2:"#f08a24",3:"#d6a516",4:"#3fa75b",5:"#2aa6b8",6:"#8a63d2"};
+const N = [
+ {id:"band1",t:"g",x:-1040,y:80,w:2500,h:2026,l:"ORGANISATION LEVEL: top senior and executive (shared by every project)"},
+ {id:"band2",t:"g",x:-1040,y:2203,w:2500,h:1439,l:"PER PROJECT: one set of these for each project"},
+ {id:"grp_how",t:"g",x:1880,y:40,w:580,h:2092,l:"HOW: a project's journey"},
+ {id:"grp_prot",t:"g",x:2780,y:40,w:480,h:1239,l:"PROTECT: runs through every step"},
+ {id:"title",x:0,y:-120,w:1900,h:120,s:"# Project management on one page\nTop band: the organisation's senior and executive layers, shared by every project. Bottom band: the roles that exist **for each project**. Left of the chain: support roles that serve a level. Right of the chain: the framework or tool that applies at that level. Far right: the project journey and what protects it. Colours: purple = chain, blue = support roles, yellow = frameworks and tools, green = journey, red = protections."},
+ {id:"f_gov",x:960,y:300,w:480,h:234,c:3,s:"## Governance (the rules)\nThe **structure of rules, roles, oversight and accountability**. Set by the board and senior management.\nTwo levels: governing **one project**, and governing the organisation's **project management as a whole**.\nDefinitions: OECD, Institute of Directors, APM."},
+ {id:"s_ppso",x:-1020,y:1668,w:380,h:209,c:5,s:"## Programme and Project Support Office (PPSO)\nA **function reporting to the board**. Standards, templates, tools, training, records, lessons. **Tracks benefits after close.** Can be virtual."},
+ {id:"w4",x:60,y:1668,w:620,h:209,c:6,s:"## Programme level\nSponsor or senior responsible owner, programme board, programme manager.\n**Chooses the right projects** (portfolio), groups related ones into a **programme** that delivers one strategic change, tracks benefits."},
+ {id:"w1",x:60,y:130,w:620,h:110,c:6,s:"## Shareholders (owners)\nOwn the company, don't run it. Elect the directors and get the returns."},
+ {id:"w3",x:60,y:728,w:620,h:143,c:6,s:"## Executive team\nCEO, CFO, CIO, MDs. **Run the business**, propose the strategy, write the business plan."},
+ {id:"w2",x:60,y:361,w:620,h:173,c:6,s:"## Board of directors\n**Governs.** Approves strategy, big investments and risk appetite. Holds executives to account."},
+ {id:"s_stake_org",x:-600,y:871,w:380,h:253,c:5,s:"## Stakeholders: consult and sign-off\nInternal: staff, users, sponsor, finance, HR, IT. External: customers, regulators, suppliers, unions.\nUsed at **needs analysis**: ask users, then get **sign-off** from decision makers."},
+ {id:"f_chg",x:960,y:1882,w:480,h:204,c:3,s:"## Change management models\n**Lewin:** unfreeze, change, refreeze. **Kotter:** eight stages. **Kotter and Schlesinger:** six ways to handle resistance. **7S** checks alignment. Roles: sponsor, change leader, change agent."},
+ {id:"w6",x:60,y:2669,w:620,h:159,c:6,s:"## Project manager\nRuns the project **day to day** within tolerances. Plans, controls, reports deviations, keeps the risk register, lessons log and records."},
+ {id:"w7",x:60,y:2971,w:620,h:180,c:6,s:"## Team manager\nRuns **one team**. Plans the team's work, makes sure the **work packages** are delivered to quality, time and cost, sends checkpoint reports. **Reports to the project manager.**"},
+ {id:"w5",x:60,y:2253,w:620,h:234,c:6,s:"## Project board (the BUS)\n**Executive:** one person, accountable, owns the business case, final say.\n**Senior user:** needs, quality, benefits.\n**Senior supplier:** technical quality and integrity.\nAuthorises each stage. Not a democracy."},
+ {id:"f_p2",x:960,y:2243,w:480,h:189,c:3,s:"## PRINCE2\n**Management and governance level:** project board, project manager. **Seven principles:** business justification, learn from experience, defined roles, manage by stages, manage by exception, focus on products, tailor to the project."},
+ {id:"s_stake",x:-1020,y:2741,w:380,h:259,c:5,s:"## Stakeholder engagement\n**Engage, don't command**: many aren't under your authority.\nAsk: how does the project affect them, and what do they gain or risk?\n**Power bases:** reward, legitimate, expert, referent, coercive."},
+ {id:"f_plan",x:960,y:2669,w:480,h:209,c:3,s:"## Planning and control tools\n**PBS** (things), **WBS** (work), product flow (order). Stages, estimates, budget and contingency. Schedule: **CPM, PERT, CCPM**, Gantt, milestones."},
+ {id:"f_life",x:960,y:2908,w:480,h:184,c:3,s:"## Lifecycle models\n**Four phases:** initiation > planning > execution > closure. Start with a **statement of work** and **team charter**. Planning balances **cost, time and scope**."},
+ {id:"w8",x:60,y:3362,w:620,h:130,c:6,s:"## Project team\nThe specialists who **do the work**: engineers or developers, testers, trainers, user representatives, suppliers. Often lent by the business functions."},
+ {id:"f_agile",x:960,y:3362,w:480,h:260,c:3,s:"## Agile\n**Delivery level: how the team works.** Incremental and iterative: small, frequent deliveries of working software, with feedback each time. People and collaboration over process; working software over heavy documents. **User stories.** Contrast **waterfall**.\nNot a governance method: it can be used *inside* a project run under PRINCE2 or another management method."},
+ {id:"s_ca",x:-1020,y:2432,w:380,h:110,c:5,s:"## Change authority\nApproves **change requests** when the board delegates it."},
+ {id:"s_assure",x:-1020,y:2236,w:380,h:134,c:5,s:"## Project assurance\n**Independent of the PM.** Audits for the board: risks, quality, scope creeping unnoticed."},
+ {id:"s_raci",x:-1020,y:3092,w:380,h:180,c:5,s:"## RACI\nWho does what on each task.\n**R** does it · **A** accountable (one only) · **C** consulted · **I** informed."},
+ {id:"p3",x:2800,y:563,w:440,h:134,c:1,s:"## Health and safety\nDuty of care: legal, moral, financial."},
+ {id:"p4",x:2800,y:737,w:440,h:134,c:1,s:"## Change and configuration control\nBaselines, **request for change**, version control, one document library."},
+ {id:"p5",x:2800,y:911,w:440,h:134,c:1,s:"## People and change\nResistance comes from **perceived threats**. Involve, train, reassure."},
+ {id:"p6",x:2800,y:1085,w:440,h:134,c:1,s:"## Lessons learned\nLog good and bad, read it at the start, share through the PPSO."},
+ {id:"p1",x:2800,y:90,w:440,h:209,c:1,s:"## Risk\nRisk = may happen. Issue = has happened.\nRegister: description, **probability × impact**, response (avoid, mitigate, transfer, accept, share), **owner**. Risk appetite. **Risk to life first.**"},
+ {id:"p2",x:2800,y:339,w:440,h:184,c:1,s:"## Quality\n**Plan** (set standards), **assure** (check the process), **control** (check the product). Quality register, walk-throughs. Stated and implied needs."},
+ {id:"f_strat",x:960,y:565,w:480,h:190,c:3,s:"## Strategy tools\nVision > mission > objectives > strategy > business plan.\nBefore choosing a strategy, executives study the situation with two tools:"},
+ {id:"f_mat",x:960,y:1668,w:480,h:210,c:3,s:"## Maturity ladder (P3M3, Kerzner, CMMI)\nHow good is the organisation at managing projects?\nAd hoc > repeatable > defined > managed > optimised. Rates the **organisation's** project management and shows how to improve. A PPSO usually appears around 'defined'."},
+ {id:"f_bc",x:960,y:1335,w:480,h:184,c:3,s:"## Business case and appraisal tools\nJustify it: benefit, cost, risk, options.\n**NPV, IRR, payback, ROI, hurdle rate, weighted matrix.**"},
+ {id:"j1",x:1900,y:90,w:540,h:150,c:4,s:"## 1. Need or idea\nAnyone can raise it: staff, customers, law, innovation, problems.\n**Who:** a sponsor or business owner puts it forward."},
+ {id:"j1b",x:1900,y:290,w:540,h:250,c:4,s:"## 1b. Needs analysis\nMeasure the **gap between current and desired**. Check resources (people, money, time, equipment, information) with a tolerance. Ask **end users**. Compare options (weighted matrix, gold, silver, bronze). Get **consensus and sign-off**. Revisit if conditions change.\n**Who:** business analysts and sponsor, with end users and stakeholders. Feeds the business case."},
+ {id:"j2",x:1900,y:590,w:540,h:134,c:4,s:"## 2. Project mandate\nShort trigger document: what, why, who is behind it.\n**Who:** senior management issues it; the PM uses it to start."},
+ {id:"j3",x:1900,y:774,w:540,h:134,c:4,s:"## 3. Business case and appraisal\nJustify it: benefit, cost, risk, options.\n**Who:** sponsor writes, finance helps, PM keeps it up to date."},
+ {id:"j9",x:1900,y:1940,w:540,h:150,c:4,s:"## 9. Benefits and lessons\n**Benefit owners** track the value after close. The **lessons log** is updated for the next project.\n**Who:** benefit owners, PPSO."},
+ {id:"j4",x:1900,y:958,w:540,h:134,c:4,s:"## 4. Authorise\nThe board or executive says **go**. The business case is baselined (frozen). Spending can start.\n**Who:** executive and project board."},
+ {id:"j5",x:1900,y:1142,w:540,h:149,c:4,s:"## 5. Plan\nScope (in and out), PBS, WBS, stages, estimates, budget and contingency, schedule.\n**Who:** PM with team and PPSO."},
+ {id:"j7",x:1900,y:1535,w:540,h:159,c:4,s:"## 7. End of stage\nPM writes the end stage report (work, money, quality, risks). Board reviews the business case and **authorises the next stage or stops**.\n**Who:** PM, project board."},
+ {id:"j8",x:1900,y:1744,w:540,h:152,c:4,s:"## 8. Close and hand over\nProducts go to **business as usual**. The project structure closes. Post-implementation review.\n**Who:** PM, project board, business owners."},
+ {id:"j6",x:1900,y:1340,w:540,h:159,c:4,s:"## 6. Do and control\nPM authorises **work packages**. Stay inside **tolerances**; go to the board only by **exception**. Change requests, version control, progress reports.\n**Who:** PM, team manager, team."},
+ {id:"f_pest",x:960,y:825,w:235,h:470,c:3,s:"## PEST: the outside world\nScan the **external environment** you can't control.\n**P**olitical: laws, regulation, government policy.\n**E**conomic: economy, interest rates, costs, demand.\n**S**ocial: demographics, lifestyle, attitudes to work.\n**T**echnological: new technology that could change the market.\n*Answers: what is changing around us?*"},
+ {id:"f_swot",x:1205,y:825,w:235,h:470,c:3,s:"## SWOT: where we stand\n**Inside:**\n**S**trengths: what we do well.\n**W**eaknesses: where we are weak.\n**Outside:**\n**O**pportunities: chances we can use.\n**T**hreats: risks from outside.\nBuild on strengths, fix weaknesses, take opportunities, guard against threats.\n*Answers: where do we stand, inside and out?*"}
+];
+const E = [
+ ["j2","bottom","j3","top",4],["j3","bottom","j4","top",4],["j4","bottom","j5","top",4],["j5","bottom","j6","top",4],["j6","bottom","j7","top",4],["j7","bottom","j8","top",4],["j8","bottom","j9","top",4],
+ ["w2","right","f_gov","left",3],["w1","bottom","w2","top",6],["w3","right","f_strat","left",3],["w3","right","f_bc","left",3],["w2","bottom","w3","top",6],
+ ["s_ppso","right","w4","left",5,"supports"],["w4","right","f_mat","left",3],["w4","right","f_chg","left",3],["w3","bottom","w4","top",6],
+ ["s_assure","right","w5","left",5,"supports"],["s_ca","right","w5","left",5,"supports"],["w5","right","f_p2","left",3],["w4","bottom","w5","top",6],
+ ["s_stake","right","w6","left",5,"engages"],["w6","right","f_plan","left",3],["w6","right","f_life","left",3],["w5","bottom","w6","top",6],["w6","bottom","w7","top",6],
+ ["p1","left","j6","right",1],["p2","left","j6","right",1],["p3","left","j6","right",1],["p4","left","j6","right",1],["p5","left","j6","right",1],["p6","left","j6","right",1],
+ ["s_ppso","top","w2","left",5,"reports to the board"],["w7","bottom","w8","top",6],["w8","right","f_agile","left",3],
+ ["j1","bottom","j1b","top",4],["j1b","bottom","j2","top",4],["j1b","left","f_bc","right",3,"feeds the business case"],
+ ["s_stake_org","right","w3","left",5,"consulted and sign off"],["s_raci","right","w6","left",5,"clarifies who does what"],
+ ["f_strat","bottom","f_pest","top",3],["f_strat","bottom","f_swot","top",3]
+];
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\*(.+?)\*/g,"<i>$1</i>");
+function md(t){ return t.split("\n").map(l => l.startsWith("## ") ? "<h2>"+inline(l.slice(3))+"</h2>" : l.startsWith("# ") ? "<h1>"+inline(l.slice(2))+"</h1>" : "<p>"+inline(l)+"</p>").join(""); }
+const world = document.getElementById("world"), svg = document.getElementById("edges"), view = document.getElementById("view");
+const byId = {}; N.forEach(n => byId[n.id] = n);
+N.forEach(n => {
+  const d = document.createElement("div");
+  d.style.cssText = "left:"+n.x+"px;top:"+n.y+"px;width:"+n.w+"px;height:"+n.h+"px";
+  if (n.t === "g") { d.className = "grp"; d.innerHTML = "<span>"+esc(n.l)+"</span>"; world.insertBefore(d, svg); }
+  else { d.className = "card" + (n.c ? "" : " plain"); if (n.c) d.style.setProperty("--c", COL[n.c]); d.innerHTML = md(n.s); world.appendChild(d); }
+});
+const pt = (n, side) => side==="left" ? [n.x, n.y+n.h/2] : side==="right" ? [n.x+n.w, n.y+n.h/2] : side==="top" ? [n.x+n.w/2, n.y] : [n.x+n.w/2, n.y+n.h];
+const dir = side => side==="left" ? [-1,0] : side==="right" ? [1,0] : side==="top" ? [0,-1] : [0,1];
+let defs = '<defs>'; Object.keys(COL).forEach(k => defs += '<marker id="a'+k+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="'+COL[k]+'"/></marker>'); defs += '</defs>';
+let out = defs;
+E.forEach(e => {
+  const a = byId[e[0]], b = byId[e[2]], p = pt(a, e[1]), q = pt(b, e[3]), da = dir(e[1]), db = dir(e[3]);
+  const k = Math.max(80, Math.min(260, Math.hypot(q[0]-p[0], q[1]-p[1]) / 2.5));
+  const c1 = [p[0]+da[0]*k, p[1]+da[1]*k], c2 = [q[0]+db[0]*k, q[1]+db[1]*k], col = COL[e[4]];
+  out += '<path d="M'+p+' C'+c1+' '+c2+' '+q+'" fill="none" stroke="'+col+'" stroke-width="3" marker-end="url(#a'+e[4]+')"/>';
+  if (e[5]) { const mx = (p[0]+3*c1[0]+3*c2[0]+q[0])/8, my = (p[1]+3*c1[1]+3*c2[1]+q[1])/8; out += '<text class="elabel" x="'+mx+'" y="'+my+'" text-anchor="middle">'+esc(e[5])+'</text>'; }
+});
+svg.innerHTML = out;
+let s = 1, tx = 0, ty = 0;
+const apply = () => world.style.transform = "translate("+tx+"px,"+ty+"px) scale("+s+")";
+function fit() {
+  const x0=-1060, y0=-140, w=4340, h=3800, vw=view.clientWidth, vh=view.clientHeight;
+  s = Math.min(vw/w, vh/h); tx = (vw - w*s)/2 - x0*s; ty = (vh - h*s)/2 - y0*s; apply();
+}
+function zoom(f, cx, cy) { cx = cx ?? view.clientWidth/2; cy = cy ?? view.clientHeight/2; const ns = Math.max(0.05, Math.min(3, s*f)); tx = cx - (cx-tx)*(ns/s); ty = cy - (cy-ty)*(ns/s); s = ns; apply(); }
+view.addEventListener("wheel", e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.12 : 1/1.12, e.clientX, e.clientY); }, {passive:false});
+const ptrs = new Map(); let last = 0;
+view.addEventListener("pointerdown", e => { view.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); view.classList.add("drag"); last = 0; });
+view.addEventListener("pointermove", e => {
+  if (!ptrs.has(e.pointerId)) return;
+  const p = ptrs.get(e.pointerId);
+  if (ptrs.size === 1) { tx += e.clientX - p[0]; ty += e.clientY - p[1]; apply(); }
+  ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a[0]-b[0], a[1]-b[1]); if (last) zoom(d/last, (a[0]+b[0])/2, (a[1]+b[1])/2); last = d; }
+});
+const up = e => { ptrs.delete(e.pointerId); last = 0; if (!ptrs.size) view.classList.remove("drag"); };
+view.addEventListener("pointerup", up); view.addEventListener("pointercancel", up);
+document.getElementById("zin").onclick = () => zoom(1.25);
+document.getElementById("zout").onclick = () => zoom(1/1.25);
+document.getElementById("fit").onclick = fit;
+addEventListener("resize", fit); fit();
+</script>
+</body>
+</html>
