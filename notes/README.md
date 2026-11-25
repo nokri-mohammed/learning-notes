@@ -12,3 +12,12 @@ One line per note, grouped by topic. The site is at https://nokri-mohammed.githu
 - [The internet](networking/internet.md): independent networks, BGP, peering and transit.
 - [Reverse proxy](networking/reverse-proxy.md): one front door that routes requests to many backend services.
 - Interactive pages, on the live site: [file journey](https://nokri-mohammed.github.io/learning-notes/networking/file-journey.html), [TCP animation](https://nokri-mohammed.github.io/learning-notes/networking/tcp.html), [mind map](https://nokri-mohammed.github.io/learning-notes/networking/assets/networking.mindmap.html).
+
+## Project management
+
+- [Project management](project-management/index.md): the subject page, with a definition and the key points.
+- [Business case](project-management/business-case.md): why do it, stakeholders, NPV, IRR and payback.
+- [Planning and scheduling](project-management/planning.md): breakdown, estimating, budgeting, the critical path.
+- [Risk, quality and lessons](project-management/risks.md): risk register, five responses, quality, lessons log.
+- [Governance and roles](project-management/governance.md): the project board, the life cycle, waterfall vs agile.
+- [Change and closure](project-management/change-closure.md): change control, closing, benefits realisation.
